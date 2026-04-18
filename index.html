@@ -366,410 +366,437 @@ th:first-child,td:first-child{width:110px;min-width:110px;padding-left:5px}
 
 <script>
 'use strict';
-const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const escCsv = s => { let v=String(s??''); if(/^[=+\-@\t\r]/.test(v))v="'"+v; if(/[",\n\r]/.test(v))v='"'+v.replace(/"/g,'""')+'"'; return v; };
-const num = (v,fb=0)=>{ const x=Number(v); return isFinite(x)?x:fb; };
-const fK = v=>'$'+(num(v)/1000).toFixed(1)+'k';
-const f1 = v=>num(v).toFixed(1);
-const fP = v=>num(v).toFixed(1)+'%';
 
-let _tt=null;
-const toast = msg=>{ const el=document.getElementById('toastEl'); el.textContent=msg; el.classList.add('show'); clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'),3000); };
-const luCache = new Map();
+document.addEventListener('DOMContentLoaded', () => {
 
-// ── TEAM DATABASE ────
-// Added some dummy data so the prototype renders correctly.
-const TEAMS_RAW = [
-  { pos: 1, p1: "Wyndham Clark", p2: "Taylor Moore", odds: 1200, sal: 10500, fit: 85 },
-  { pos: 2, p1: "Matt Fitzpatrick", p2: "Alex Fitzpatrick", odds: 1500, sal: 9800, fit: 75 },
-  { pos: 3, p1: "Brooks Koepka", p2: "Shane Lowry", odds: 800, sal: 11200, fit: 90 },
-  { pos: 4, p1: "Ben Griffin", p2: "Andrew Novak", odds: 4500, sal: 7200, fit: 65 },
-  { pos: 5, p1: "Collin Morikawa", p2: "Kurt Kitayama", odds: 1400, sal: 10200, fit: 80 },
-  { pos: 6, p1: "Sahith Theegala", p2: "Will Zalatoris", odds: 1600, sal: 9900, fit: 78 }
-];
-
-// CHALK teams (will be highly owned)
-const CHALK_TEAMS = new Set([1, 2, 3, 4, 5, 6]);
-
-let T = [], CF = 'all', TF = 'all', SC = 'pos', SA = false, lastLU = null;
-
-function proc() {
-  // Compute implied win prob and ranking signals
-  const impFn = o => { const v=num(o); if(!v)return 0; return v>0?100/(v+100):Math.abs(v)/(Math.abs(v)+100); };
-  T = TEAMS_RAW.map(d => {
-    const t = {...d, locked:false, excluded:false};
-    t.impliedWin = impFn(d.odds) * 100;
-    t.teamName = d.p1 + ' / ' + d.p2;
-    t.isChalk = CHALK_TEAMS.has(d.pos);
-    return t;
-  });
-
-  // Salary rank and odds rank for delta
-  [...T].sort((a,b)=>b.sal-a.sal).forEach((t,i)=>t.salRank=i+1);
-  [...T].sort((a,b)=>b.impliedWin-a.impliedWin).forEach((t,i)=>t.oddsRank=i+1);
-
-  let tRO = 0;
-  T.forEach(t => {
-    t.dlta = t.salRank - t.oddsRank;
-    t.fitScore = num(t.fit);
-    const dN = Math.max(0,(t.dlta+20)/40);
-    t.dfScore = dN * t.fitScore;
-
-    // pOwn estimate
-    const base = t.sal >= 11000? 18 : t.sal >= 10000? 14 : t.sal >= 9000? 11 : 9;
-    const bump = t.dlta * 1.2;
-    const chalky = t.isChalk? 12 : 0;
-    t.rawOwn = Math.max(0.5, base + bump + chalky);
-    tRO += t.rawOwn;
-  });
-
-  const ownNorm = tRO > 0? 400/tRO : 1; // 4 roster spots, target ~100% total
-  T.forEach(t => {
-    t.pOwn = Math.min(50, t.rawOwn * ownNorm);
-    t.leverage = t.fitScore - Math.log2(Math.max(1, t.pOwn)) * 6;
-    t.composite = t.fitScore + (t.impliedWin * 2) + t.dlta * 0.5;
-  });
-
-  if (T.length > 0) {
-    const dfV = T.map(x=>x.dfScore), mxDF=Math.max(...dfV), mnDF=Math.min(...dfV), rDF=mxDF-mnDF||1;
-    T.forEach(t => t.dfScoreN = ((t.dfScore-mnDF)/rDF)*100);
-  }
-
-  renderTeams(); renderTable(); renderSlots(); updStats();
-}
-
-// ── TEAM GRID ────────────────────────────────────────────
-function renderTeams() {
-  const q = (document.getElementById('t-srch').value||'').toLowerCase();
-  const sort = document.getElementById('t-sort').value;
-  let d = T.filter(t => {
-    if (q &&!t.teamName.toLowerCase().includes(q)) return false;
-    if (CF==='value') return t.dlta > 2;
-    if (CF==='chalk') return t.isChalk;
-    if (CF==='locked') return t.locked;
-    return true;
-  });
-  d.sort((a,b)=>{
-    if(sort==='sal')return b.sal-a.sal;
-    if(sort==='sal-a')return a.sal-b.sal;
-    if(sort==='dlta')return b.dlta-a.dlta;
-    if(sort==='fit')return b.fitScore-a.fitScore;
-    return a.pos-b.pos;
-  });
-
-  const badges = t => {
-    let b = '';
-    if (t.dlta > 3) b += '<span class="tc-badge b-value">VALUE</span>';
-    if (t.isChalk) b += '<span class="tc-badge b-chalk">CHALK</span>';
-    if (t.fitScore >= 75) b += '<span class="tc-badge b-steam">COURSE FIT</span>';
-    if (t.leverage > 60) b += '<span class="tc-badge b-lev">LEV+</span>';
-    return b;
-  };
-
-  document.getElementById('teamGrid').innerHTML = d.map(t => {
-    const dC = t.dlta > 2? 'vg' : t.dlta < -2? 'vr' : '';
-    const rc = t.locked? 'selected locked' : t.excluded? '' : '';
-    return `<div class="team-card ${rc}" data-pos="${t.pos}">
-<button class="lock-btn ${t.locked?'on':''}" data-la="${t.pos}" title="${t.locked?'Unlock':'Lock'} team" aria-label="${t.locked?'Unlock':'Lock'} ${esc(t.teamName)}">🔒</button>
-<div class="tc-hdr">
-  <span class="tc-rank">#${t.pos}/74 · ${esc(t.p1.split(' ')[1]||t.p1)} + ${esc(t.p2.split(' ')[1]||t.p2)}</span>
-  <span class="tc-sal">${fK(t.sal)}</span>
-</div>
-<div class="tc-body">
-  <div class="tc-player"><div class="tc-num">P1</div><div class="tc-name">${esc(t.p1)}</div></div>
-  <div class="tc-player"><div class="tc-num">P2</div><div class="tc-name">${esc(t.p2)}</div></div>
-</div>
-<div class="tc-foot">
-  <span style="font-size:9px;font-family:var(--mn);color:var(--tx2)">WIN ${f1(t.impliedWin)}%</span>
-  <span style="font-size:9px;font-family:var(--mn);color:${t.dlta>2?'var(--grn)':t.dlta<-2?'var(--red)':'var(--tx3)'}">Δ${t.dlta>0?'+':''}${t.dlta}</span>
-  <span style="font-size:9px;font-family:var(--mn);color:var(--tx3)">FIT ${t.fitScore}</span>
-  ${badges(t)}
-</div>
-</div>`;
-  }).join('');
-
-  document.querySelectorAll('.team-card').forEach(card => {
-    card.addEventListener('click', e => {
-      if (e.target.closest('.lock-btn')) return;
-      tL(parseInt(card.dataset.pos));
+  // 1. ATTACH UI LISTENERS FIRST (Ensures tabs always work, even if data is broken)
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.addEventListener('click',()=>{
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+      document.querySelectorAll('.pnl').forEach(x=>x.classList.remove('on'));
+      t.classList.add('on');
+      const pnl=document.getElementById('pnl-'+t.dataset.p);
+      if(pnl)pnl.classList.add('on');
+      window.scrollTo({top:0,behavior:'smooth'});
     });
   });
-  document.querySelectorAll('.lock-btn[data-la]').forEach(b => {
-    b.addEventListener('click', e => { e.stopPropagation(); tL(parseInt(b.dataset.la)); });
-  });
-}
 
-// ── TABLE ────────────────────────────────────────────────
-function renderTable() {
-  const q = (document.getElementById('tbl-srch').value||'').toLowerCase();
-  let d = T.filter(t => {
-    if (q &&!t.teamName.toLowerCase().includes(q)) return false;
-    if (TF==='value') return t.dlta > 2;
-    if (TF==='chalk') return t.isChalk;
-    return true;
-  });
-  d.sort((a,b)=>{
-    let va=a[SC], vb=b[SC];
-    if(va==null)va=SA?Infinity:-Infinity;
-    if(vb==null)vb=SA?Infinity:-Infinity;
-    if(typeof va==='string')return SA?va.localeCompare(vb):vb.localeCompare(va);
-    return SA?va-vb:vb-va;
-  });
-  document.querySelectorAll('#mainTbl th[data-c]').forEach(th=>th.classList.toggle('act',th.dataset.c===SC));
-  document.getElementById('tblBody').innerHTML = d.map(t => {
-    const rc = t.locked?'row-lk':t.excluded?'row-ex':'';
-    const dC = t.dlta>2?'vg':t.dlta<-2?'vr':'';
-    const dfC = t.dfScoreN>70?'vgl':t.dfScoreN>40?'':'';
-    return `<tr class="${rc}">
-<td><div class="team-nm"><span class="p1">${esc(t.p1)}</span><span class="p2">${esc(t.p2)}</span></div>
-<div class="acts">
-<button class="bi ${t.locked?'lk':''}" data-ba="lock" data-bp="${t.pos}" aria-label="${t.locked?'Unlock':'Lock'} team">🔒</button>
-<button class="bi ${t.excluded?'ex':''}" data-ba="excl" data-bp="${t.pos}" aria-label="${t.excluded?'Re-include':'Exclude'} team">✕</button>
-</div></td>
-<td class="mn" style="color:var(--tx3);font-size:10px">${t.pos}/74</td>
-<td class="vgl mn" style="font-size:11px;font-weight:700">${fK(t.sal)}</td>
-<td class="mn" style="font-size:10px">${f1(t.impliedWin)}%</td>
-<td class="${dC} mn" style="font-weight:700">${t.dlta>0?'+':''}${t.dlta}</td>
-<td style="color:${t.fitScore>=75?'var(--grn)':t.fitScore>=55?'var(--tx)':'var(--tx3)';}">${t.fitScore}</td>
-<td class="mn ${dfC}" style="font-weight:700">${f1(t.dfScoreN)}</td>
-<td class="mn ${t.isChalk?'vr':''}" style="font-size:10px">${fP(t.pOwn)}</td>
-<td class="mn ${t.leverage>60?'vgl':''}">${f1(t.leverage)}</td>
-</tr>`;
-  }).join('');
-
-  document.querySelectorAll('#tblBody button[data-ba]').forEach(b=>b.addEventListener('click',()=>{
-    const pos=parseInt(b.dataset.bp);
-    if(b.dataset.ba==='lock')tL(pos); else tE(pos);
+  document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{
+    const tab=document.querySelector(`.tab[data-p="${b.dataset.go}"]`);
+    if(tab)tab.click();
   }));
-}
-
-// ── SLOTS ────────────────────────────────────────────────
-function renderSlots() {
-  const lk = T.filter(x=>x.locked);
-  const slots = document.getElementById('slots');
-  let html = '';
-  for (let i=0; i<4; i++) {
-    const t = lk[i];
-    if (t) {
-      html += `<div class="slot filled">
-<div><div class="slot-lbl">TEAM ${i+1}</div>
-<div class="slot-nm">${esc(t.p1)} / ${esc(t.p2)}</div>
-<div class="slot-sub">FIT ${t.fitScore} · Δ${t.dlta>0?'+':''}${t.dlta} · ${fP(t.pOwn)} OWN</div></div>
-<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-<span class="slot-sal">${fK(t.sal)}</span>
-<button class="rm-btn" data-rm="${t.pos}">✕</button>
-</div></div>`;
-    } else {
-      html += `<div class="slot"><div style="color:var(--tx3);font-size:11px">Team ${i+1} — Empty</div><span style="font-family:var(--mn);font-size:10px;color:var(--tx3)">—</span></div>`;
-    }
-  }
-  slots.innerHTML = html;
-  slots.querySelectorAll('.rm-btn[data-rm]').forEach(b=>b.addEventListener('click',()=>{ const t=T.find(x=>x.pos===parseInt(b.dataset.rm)); if(t){t.locked=false;} renderAll(); }));
-}
-
-function updStats() {
-  const lk=T.filter(x=>x.locked), ex=T.filter(x=>x.excluded);
-  const sal=lk.reduce((s,t)=>s+t.sal,0), own=lk.reduce((s,t)=>s+t.pOwn,0);
-  const win=lk.reduce((s,t)=>s+t.impliedWin,0), df=lk.reduce((s,t)=>s+t.dfScoreN,0);
-  document.getElementById('st-l').textContent=lk.length+'/4';
-  document.getElementById('st-e').textContent=ex.length;
-  document.getElementById('st-s').textContent='$'+sal.toLocaleString();
-  document.getElementById('st-r').textContent='$'+(50000-sal).toLocaleString();
-  document.getElementById('st-w').textContent=f1(win)+'%';
-  document.getElementById('st-d').textContent=f1(df);
-  document.getElementById('st-o').textContent=f1(own)+'%';
-  document.getElementById('fab-c').textContent=lk.length+'/4';
-  document.getElementById('fab-s').textContent='$'+(50000-sal).toLocaleString();
-  document.getElementById('fab-w').textContent=f1(win)+'%';
-  document.getElementById('fab-o').textContent=f1(own)+'%';
-}
-
-function tL(pos) { const t=T.find(x=>x.pos===pos); if(!t)return; t.locked=!t.locked; if(t.locked){t.excluded=false; if(T.filter(x=>x.locked).length>4){t.locked=false; toast('Max 4 teams.');}} renderAll(); }
-function tE(pos) { const t=T.find(x=>x.pos===pos); if(!t)return; t.excluded=!t.excluded; if(t.excluded)t.locked=false; renderAll(); }
-function clrAll() { T.forEach(t=>{t.locked=false;}); renderAll(); }
-
-function renderAll() { renderTeams(); renderTable(); renderSlots(); updStats(); }
-
-// ── OPTIMIZER ────────────────────────────────────────────
-function gen(type) {
-  const lk=T.filter(x=>x.locked);
-  if(lk.length>4)return toast('Max 4 locks.');
-  const lkS=lk.reduce((s,t)=>s+t.sal,0);
-  if(lkS>50000)return toast('Locked teams exceed $50k.');
-  const pool=T.filter(x=>!x.excluded&&!x.locked), req=4-lk.length;
-  if(pool.length<req)return toast('Not enough available teams.');
-  if(req===0){lastLU={roster:lk,type};showLU(lk,type);return;}
-
-  const unit=100, maxU=Math.floor((50000-lkS)/unit), minU=Math.max(0,Math.ceil((47000-lkS)/unit));
-  let dp=Array(req+1).fill(null).map(()=>Array(maxU+1).fill(null));
-  dp[0][0] = {score:0,r:[]};
   
-  for(const t of pool){
-    const wt=Math.floor(t.sal/unit);
-    const val=type==='val'?t.dfScoreN:(t.composite+t.leverage*.4);
-    for(let k=req-1;k>=0;k--) for(let w=maxU-wt;w>=0;w--){
-      if(!dp[k][w])continue;
-      const ns=dp[k][w].score+val, nw=w+wt;
-      if(!dp[k+1][nw]||dp[k+1][nw].score<ns) dp[k+1][nw]={score:ns,r:[...dp[k][w].r,t]};
-    }
-  }
-  let best=null;
-  for(let w=maxU;w>=minU;w--){
-    if(!dp[req][w])continue;
-    const cand=dp[req][w];
-    const tO=lk.reduce((s,t)=>s+t.pOwn,0)+cand.r.reduce((s,t)=>s+t.pOwn,0);
-    if(type==='gpp'&&tO>90)continue;
-    if(!best||cand.score>best.score)best=cand;
-  }
-  if(!best)for(let w=maxU;w>=minU;w--)if(dp[req][w]&&(!best||dp[req][w].score>best.score))best=dp[req][w];
-  if(!best)return toast("Can't build lineup. Try clearing exclusions.");
-  const full=[...lk,...best.r];
-  lastLU={roster:full,type};
-  showLU(full,type);
-}
+  document.getElementById('fabEl').addEventListener('click',()=>document.querySelector('.tab[data-p="build"]')?.click());
+  document.getElementById('fabEl').addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();document.querySelector('.tab[data-p="build"]')?.click();} });
 
-function showLU(roster,type) {
-  const box=document.getElementById('optBox'), isDelta=type==='val';
-  box.style.display='block';
-  box.style.borderColor=isDelta?'var(--gld2)':'var(--blu)';
-  box.querySelector('.opt-hdr').style.background=isDelta?'rgba(211,167,34,.8)':'var(--blu)';
-  box.querySelector('.opt-hdr').style.color=isDelta?'#000':'#fff';
-  document.getElementById('opt-t').textContent=isDelta?'⚡ Δ/FIT OPTIMAL':'🚀 GPP OPTIMAL';
-  const sal=roster.reduce((s,t)=>s+t.sal,0), own=roster.reduce((s,t)=>s+t.pOwn,0);
-  const win=roster.reduce((s,t)=>s+t.impliedWin,0), df=roster.reduce((s,t)=>s+t.dfScoreN,0);
-  document.getElementById('opt-s').innerHTML=`<span>SAL $${sal.toLocaleString()}</span><span>WIN ${f1(win)}%</span><span>Δ/FIT ${f1(df)}</span><span>OWN ${f1(own)}%</span>`;
-  document.getElementById('opt-l').innerHTML=roster.sort((a,b)=>b.sal-a.sal).map(t=>`<li><div><div style="font-weight:700">${t.locked?'🔒 ':''}<span style="color:var(--tx)">${esc(t.p1)}</span> / <span style="color:var(--tx2)">${esc(t.p2)}</span></div><div style="font-size:9px;color:var(--tx2);font-family:var(--mn);margin-top:2px">FIT ${t.fitScore} · Δ${t.dlta>0?'+':''}${t.dlta} · WIN ${f1(t.impliedWin)}% · pOWN ${fP(t.pOwn)}</div></div><span class="vgl mn" style="font-weight:700">${fK(t.sal)}</span></li>`).join('');
-}
+  // Helpers
+  const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const escCsv = s => { let v=String(s??''); if(/^[=+\-@\t\r]/.test(v))v="'"+v; if(/[",\n\r]/.test(v))v='"'+v.replace(/"/g,'""')+'"'; return v; };
+  const num = (v,fb=0)=>{ const x=Number(v); return isFinite(x)?x:fb; };
+  const fK = v=>'$'+(num(v)/1000).toFixed(1)+'k';
+  const f1 = v=>num(v).toFixed(1);
+  const fP = v=>num(v).toFixed(1)+'%';
 
-function xCSV(){
-  if(!lastLU)return toast('No lineup. Generate first.');
-  const s=[...lastLU.roster].sort((a,b)=>b.sal-a.sal);
-  const blob=new Blob([],{type:'text/csv;charset=utf-8'}); 
-  const url=URL.createObjectURL(blob), a=document.createElement('a');
-  a.href=url; a.download='zurich_classic_lineup.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  setTimeout(()=>URL.revokeObjectURL(url),0);
-}
-function xPB(id){const r=luCache.get(id);if(!r)return;const s=[...r].sort((a,b)=>b.sal-a.sal);const blob=new Blob([],{type:'text/csv;charset=utf-8'}); 
-const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='zurich_lu.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),0);}
+  let _tt=null;
+  const toast = msg=>{ const el=document.getElementById('toastEl'); el.textContent=msg; el.classList.add('show'); clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'),3000); };
+  const luCache = new Map();
 
-// ── PRE-BUILT ─────────────────────────────────────────────
-function runPre(type) {
-  const sBtn=document.getElementById('simBtn'), dBtn=document.getElementById('dfBtn');
-  sBtn.disabled=true; dBtn.disabled=true;
-  const btn=type==='gpp'?sBtn:dBtn;
-  btn.textContent='⏳ OPTIMIZING...';
-  const pw=document.getElementById('progW'), pf=document.getElementById('progFill'), pt=document.getElementById('progTxt');
-  
-  document.getElementById('simOut').style.display='none';
-  document.getElementById('gppSec').style.display='none';
-  document.getElementById('dfSec').style.display='none';
-  
-  pw.style.display='block'; pf.style.width='0%'; pt.textContent='Running optimizer...';
+  // ── TEAM DATABASE ────
+  // Paste your actual data here! This is dummy data so the UI doesn't crash on load.
+  const TEAMS_RAW = [
+    { pos: 1, p1: "Wyndham Clark", p2: "Taylor Moore", odds: 1200, sal: 10500, fit: 85 },
+    { pos: 2, p1: "Matt Fitzpatrick", p2: "Alex Fitzpatrick", odds: 1500, sal: 9800, fit: 75 },
+    { pos: 3, p1: "Brooks Koepka", p2: "Shane Lowry", odds: 800, sal: 11200, fit: 90 },
+    { pos: 4, p1: "Ben Griffin", p2: "Andrew Novak", odds: 4500, sal: 7200, fit: 65 },
+    { pos: 5, p1: "Collin Morikawa", p2: "Kurt Kitayama", odds: 1400, sal: 10200, fit: 80 },
+    { pos: 6, p1: "Sahith Theegala", p2: "Will Zalatoris", odds: 1600, sal: 9900, fit: 78 }
+  ];
 
-  setTimeout(()=>{
-    const pool=T.filter(t=>!t.excluded), locked=T.filter(t=>t.locked), avail=pool.filter(t=>!t.locked);
-    const lkS=locked.reduce((s,t)=>s+t.sal,0), unit=100;
-    const maxU=Math.floor((50000-lkS)/unit), minU=Math.max(0,Math.ceil((47000-lkS)/unit)), req=4-locked.length;
+  const CHALK_TEAMS = new Set([1, 2, 3, 4, 5, 6]);
+  let T = [], CF = 'all', TF = 'all', SC = 'pos', SA = false, lastLU = null;
+
+  function proc() {
+    const impFn = o => { const v=num(o); if(!v)return 0; return v>0?100/(v+100):Math.abs(v)/(Math.abs(v)+100); };
     
-    if(avail.length < req) {
-      pw.style.display='none';
-      sBtn.disabled=false; dBtn.disabled=false;
-      sBtn.textContent='▶ RUN GPP OPTIMIZER'; dBtn.textContent='⚡ RUN Δ/FIT OPTIMIZER';
-      return toast('Not enough available teams.');
+    T = TEAMS_RAW.map(d => {
+      const t = {...d, locked:false, excluded:false};
+      t.p1 = String(d.p1 || 'TBD');
+      t.p2 = String(d.p2 || 'TBD');
+      t.impliedWin = impFn(d.odds) * 100;
+      t.teamName = t.p1 + ' / ' + t.p2;
+      t.isChalk = CHALK_TEAMS.has(t.pos);
+      return t;
+    });
+
+    [...T].sort((a,b)=>b.sal-a.sal).forEach((t,i)=>t.salRank=i+1);
+    [...T].sort((a,b)=>b.impliedWin-a.impliedWin).forEach((t,i)=>t.oddsRank=i+1);
+
+    let tRO = 0;
+    T.forEach(t => {
+      t.dlta = t.salRank - t.oddsRank;
+      t.fitScore = num(t.fit);
+      const dN = Math.max(0,(t.dlta+20)/40);
+      t.dfScore = dN * t.fitScore;
+
+      const base = t.sal >= 11000? 18 : t.sal >= 10000? 14 : t.sal >= 9000? 11 : 9;
+      const bump = t.dlta * 1.2;
+      const chalky = t.isChalk? 12 : 0;
+      t.rawOwn = Math.max(0.5, base + bump + chalky);
+      tRO += t.rawOwn;
+    });
+
+    const ownNorm = tRO > 0? 400/tRO : 1;
+    T.forEach(t => {
+      t.pOwn = Math.min(50, t.rawOwn * ownNorm);
+      t.leverage = t.fitScore - Math.log2(Math.max(1, t.pOwn)) * 6;
+      t.composite = t.fitScore + (t.impliedWin * 2) + t.dlta * 0.5;
+    });
+
+    if (T.length > 0) {
+      const dfV = T.map(x=>x.dfScore), mxDF=Math.max(...dfV), mnDF=Math.min(...dfV), rDF=mxDF-mnDF||1;
+      T.forEach(t => t.dfScoreN = ((t.dfScore-mnDF)/rDF)*100);
     }
 
-    const lineups=[], used=new Set(), pen=new Map(); 
+    renderTeams(); renderTable(); renderSlots(); updStats();
+    
+    // Attach Data-Dependent Listeners
+    document.querySelectorAll('.chip[data-f]').forEach(c=>c.addEventListener('click',()=>{
+      CF=c.dataset.f;
+      document.querySelectorAll('.chip[data-f]').forEach(x=>x.classList.remove('on'));
+      c.classList.add('on');
+      renderTeams();
+    }));
+    document.querySelectorAll('.chip[data-tf]').forEach(c=>c.addEventListener('click',()=>{
+      TF=c.dataset.tf;
+      document.querySelectorAll('.chip[data-tf]').forEach(x=>x.classList.remove('on'));
+      c.classList.add('on');
+      renderTable();
+    }));
+    
+    document.getElementById('t-srch').addEventListener('input',renderTeams);
+    document.getElementById('tbl-srch').addEventListener('input',renderTable);
+    document.getElementById('t-sort').addEventListener('change',renderTeams);
+    
+    document.querySelectorAll('#mainTbl th[data-c]').forEach(th=>{
+      th.style.cursor='pointer';
+      th.addEventListener('click',()=>{ SA=SC===th.dataset.c?!SA:false; SC=th.dataset.c; renderTable(); });
+    });
+    
+    document.querySelectorAll('[data-g]').forEach(b=>b.addEventListener('click',()=>gen(b.dataset.g)));
+    document.getElementById('clrBtn').addEventListener('click',()=>{clrAll();document.getElementById('optBox').style.display='none';});
+    document.getElementById('expBtn').addEventListener('click',xCSV);
+    document.getElementById('simBtn').addEventListener('click',()=>runPre('gpp'));
+    document.getElementById('dfBtn').addEventListener('click',()=>runPre('val'));
+  }
 
-    for(let att=0;att<20&&lineups.length<5;att++){
-      let dp=Array(req+1).fill(null).map(()=>Array(maxU+1).fill(null));
-      dp[0][0]={score:0,r:[]}; 
-      for(const t of avail){
-        const wt=Math.floor(t.sal/unit), pv=Math.max(0,(type==='gpp'?(t.composite+t.leverage*.4):t.dfScoreN)-(pen.get(t.pos)||0));
-        for(let k=req-1;k>=0;k--) for(let w=maxU-wt;w>=0;w--){
-          if(!dp[k][w])continue;
-          const ns=dp[k][w].score+pv, nw=w+wt;
-          if(!dp[k+1][nw]||dp[k+1][nw].score<ns) dp[k+1][nw]={score:ns,r:[...dp[k][w].r,t]};
-        }
-      }
-      let best=null;
-      for(let w=maxU;w>=minU;w--)if(dp[req][w]&&(!best||dp[req][w].score>best.score))best=dp[req][w];
-      if(!best)break;
-      const full=[...locked,...best.r], key=full.map(t=>t.pos).sort().join('-');
-      if(!used.has(key)){
-        used.add(key);
-        lineups.push({roster:full,sal:full.reduce((s,t)=>s+t.sal,0),df:full.reduce((s,t)=>s+t.dfScoreN,0),own:full.reduce((s,t)=>s+t.pOwn,0),win:full.reduce((s,t)=>s+t.impliedWin,0)});
-      }
-      best.r.forEach(t=>pen.set(t.pos,(pen.get(t.pos)||0)+20));
-    }
+  // ── TEAM GRID ────────────────────────────────────────────
+  function renderTeams() {
+    const q = (document.getElementById('t-srch').value||'').toLowerCase();
+    const sort = document.getElementById('t-sort').value;
+    let d = T.filter(t => {
+      if (q &&!t.teamName.toLowerCase().includes(q)) return false;
+      if (CF==='value') return t.dlta > 2;
+      if (CF==='chalk') return t.isChalk;
+      if (CF==='locked') return t.locked;
+      return true;
+    });
+    d.sort((a,b)=>{
+      if(sort==='sal')return b.sal-a.sal;
+      if(sort==='sal-a')return a.sal-b.sal;
+      if(sort==='dlta')return b.dlta-a.dlta;
+      if(sort==='fit')return b.fitScore-a.fitScore;
+      return a.pos-b.pos;
+    });
 
-    pf.style.width='100%'; pt.textContent=`✓ ${lineups.length} lineups generated.`;
-    document.getElementById('simOut').style.display='block';
-    const secId=type==='gpp'?'gppSec':'dfSec';
-    const gridId=type==='gpp'?'gppGrid':'dfGrid';
-    document.getElementById(secId).style.display='block';
-    document.getElementById(gridId).innerHTML=lineups.map((l,i)=>{
-      const id=`${type}_${i}`;
-      luCache.set(id,[...l.roster]);
-      return `<div class="lu ${type==='gpp'?'g':'v'}">
-<div class="lu-hdr"><span>#${i+1} ${type==='gpp'?'GPP':'Δ/FIT'}</span><strong>WIN ${f1(l.win)}% · Δ/FIT ${f1(l.df)}</strong></div>
-<div class="lu-body">${[...l.roster].sort((a,b)=>b.sal-a.sal).map(t=>`<div class="lu-row">
-<span style="font-weight:600">${esc(t.p1.split(' ')[1]||t.p1)} / ${esc(t.p2.split(' ')[1]||t.p2)} <span style="color:var(--tx3);font-family:var(--mn);font-size:8px">FIT ${t.fitScore}</span></span>
-<span class="vgl mn" style="font-weight:700">${fK(t.sal)}</span></div>`).join('')}</div>
-<div class="lu-foot"><span>SAL <strong>$${l.sal.toLocaleString()}</strong></span><span>OWN <strong>${f1(l.own)}%</strong></span><span>WIN <strong>${f1(l.win)}%</strong></span></div>
-<div class="lu-exp"><button data-xid="${id}">📥 CSV</button></div></div>`;
+    const badges = t => {
+      let b = '';
+      if (t.dlta > 3) b += '<span class="tc-badge b-value">VALUE</span>';
+      if (t.isChalk) b += '<span class="tc-badge b-chalk">CHALK</span>';
+      if (t.fitScore >= 75) b += '<span class="tc-badge b-steam">COURSE FIT</span>';
+      if (t.leverage > 60) b += '<span class="tc-badge b-lev">LEV+</span>';
+      return b;
+    };
+
+    document.getElementById('teamGrid').innerHTML = d.map(t => {
+      const dC = t.dlta > 2? 'vg' : t.dlta < -2? 'vr' : '';
+      const rc = t.locked? 'selected locked' : t.excluded? '' : '';
+      const p1Short = t.p1.split(' ')[1] || t.p1;
+      const p2Short = t.p2.split(' ')[1] || t.p2;
+      
+      return `<div class="team-card ${rc}" data-pos="${t.pos}">
+  <button class="lock-btn ${t.locked?'on':''}" data-la="${t.pos}" title="${t.locked?'Unlock':'Lock'} team" aria-label="${t.locked?'Unlock':'Lock'} ${esc(t.teamName)}">🔒</button>
+  <div class="tc-hdr">
+    <span class="tc-rank">#${t.pos}/74 · ${esc(p1Short)} + ${esc(p2Short)}</span>
+    <span class="tc-sal">${fK(t.sal)}</span>
+  </div>
+  <div class="tc-body">
+    <div class="tc-player"><div class="tc-num">P1</div><div class="tc-name">${esc(t.p1)}</div></div>
+    <div class="tc-player"><div class="tc-num">P2</div><div class="tc-name">${esc(t.p2)}</div></div>
+  </div>
+  <div class="tc-foot">
+    <span style="font-size:9px;font-family:var(--mn);color:var(--tx2)">WIN ${f1(t.impliedWin)}%</span>
+    <span style="font-size:9px;font-family:var(--mn);color:${t.dlta>2?'var(--grn)':t.dlta<-2?'var(--red)':'var(--tx3)'}">Δ${t.dlta>0?'+':''}${t.dlta}</span>
+    <span style="font-size:9px;font-family:var(--mn);color:var(--tx3)">FIT ${t.fitScore}</span>
+    ${badges(t)}
+  </div>
+  </div>`;
     }).join('');
 
-    document.querySelectorAll(`#${gridId} button[data-xid]`).forEach(b=>b.addEventListener('click',()=>xPB(b.dataset.xid)));
-    sBtn.disabled=false; dBtn.disabled=false;
-    sBtn.textContent='▶ RUN GPP OPTIMIZER'; dBtn.textContent='⚡ RUN Δ/FIT OPTIMIZER';
-    setTimeout(()=>document.getElementById(secId).scrollIntoView({behavior:'smooth'}),200);
-  },50);
-}
+    document.querySelectorAll('.team-card').forEach(card => {
+      card.addEventListener('click', e => {
+        if (e.target.closest('.lock-btn')) return;
+        tL(parseInt(card.dataset.pos));
+      });
+    });
+    document.querySelectorAll('.lock-btn[data-la]').forEach(b => {
+      b.addEventListener('click', e => { e.stopPropagation(); tL(parseInt(b.dataset.la)); });
+    });
+  }
 
-// ── EVENTS ───────────────────────────────────────────────
-document.querySelectorAll('.tab').forEach(t=>{
-  t.addEventListener('click',()=>{
-    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
-    document.querySelectorAll('.pnl').forEach(x=>x.classList.remove('on'));
-    t.classList.add('on');
-    const pnl=document.getElementById('pnl-'+t.dataset.p);
-    if(pnl)pnl.classList.add('on');
-    window.scrollTo({top:0,behavior:'smooth'});
-  });
-});
-document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{
-  const tab=document.querySelector(`.tab[data-p="${b.dataset.go}"]`);
-  if(tab)tab.click();
-}));
-document.querySelectorAll('.chip[data-f]').forEach(c=>c.addEventListener('click',()=>{
-  CF=c.dataset.f;
-  document.querySelectorAll('.chip[data-f]').forEach(x=>x.classList.remove('on'));
-  c.classList.add('on');
-  renderTeams();
-}));
-document.querySelectorAll('.chip[data-tf]').forEach(c=>c.addEventListener('click',()=>{
-  TF=c.dataset.tf;
-  document.querySelectorAll('.chip[data-tf]').forEach(x=>x.classList.remove('on'));
-  c.classList.add('on');
-  renderTable();
-}));
-document.getElementById('t-srch').addEventListener('input',renderTeams);
-document.getElementById('tbl-srch').addEventListener('input',renderTable);
-document.getElementById('t-sort').addEventListener('change',renderTeams);
-document.querySelectorAll('#mainTbl th[data-c]').forEach(th=>{
-  th.style.cursor='pointer';
-  th.addEventListener('click',()=>{ SA=SC===th.dataset.c?!SA:false; SC=th.dataset.c; renderTable(); });
-});
-document.querySelectorAll('[data-g]').forEach(b=>b.addEventListener('click',()=>gen(b.dataset.g)));
-document.getElementById('clrBtn').addEventListener('click',()=>{clrAll();document.getElementById('optBox').style.display='none';});
-document.getElementById('expBtn').addEventListener('click',xCSV);
-document.getElementById('simBtn').addEventListener('click',()=>runPre('gpp'));
-document.getElementById('dfBtn').addEventListener('click',()=>runPre('val'));
-document.getElementById('fabEl').addEventListener('click',()=>document.querySelector('.tab[data-p="build"]')?.click());
-document.getElementById('fabEl').addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();document.querySelector('.tab[data-p="build"]')?.click();} });
+  // ── TABLE ────────────────────────────────────────────────
+  function renderTable() {
+    const q = (document.getElementById('tbl-srch').value||'').toLowerCase();
+    let d = T.filter(t => {
+      if (q &&!t.teamName.toLowerCase().includes(q)) return false;
+      if (TF==='value') return t.dlta > 2;
+      if (TF==='chalk') return t.isChalk;
+      return true;
+    });
+    d.sort((a,b)=>{
+      let va=a[SC], vb=b[SC];
+      if(va==null)va=SA?Infinity:-Infinity;
+      if(vb==null)vb=SA?Infinity:-Infinity;
+      if(typeof va==='string')return SA?va.localeCompare(vb):vb.localeCompare(va);
+      return SA?va-vb:vb-va;
+    });
+    document.querySelectorAll('#mainTbl th[data-c]').forEach(th=>th.classList.toggle('act',th.dataset.c===SC));
+    document.getElementById('tblBody').innerHTML = d.map(t => {
+      const rc = t.locked?'row-lk':t.excluded?'row-ex':'';
+      const dC = t.dlta>2?'vg':t.dlta<-2?'vr':'';
+      const dfC = t.dfScoreN>70?'vgl':t.dfScoreN>40?'':'';
+      return `<tr class="${rc}">
+  <td><div class="team-nm"><span class="p1">${esc(t.p1)}</span><span class="p2">${esc(t.p2)}</span></div>
+  <div class="acts">
+  <button class="bi ${t.locked?'lk':''}" data-ba="lock" data-bp="${t.pos}" aria-label="${t.locked?'Unlock':'Lock'} team">🔒</button>
+  <button class="bi ${t.excluded?'ex':''}" data-ba="excl" data-bp="${t.pos}" aria-label="${t.excluded?'Re-include':'Exclude'} team">✕</button>
+  </div></td>
+  <td class="mn" style="color:var(--tx3);font-size:10px">${t.pos}/74</td>
+  <td class="vgl mn" style="font-size:11px;font-weight:700">${fK(t.sal)}</td>
+  <td class="mn" style="font-size:10px">${f1(t.impliedWin)}%</td>
+  <td class="${dC} mn" style="font-weight:700">${t.dlta>0?'+':''}${t.dlta}</td>
+  <td style="color:${t.fitScore>=75?'var(--grn)':t.fitScore>=55?'var(--tx)':'var(--tx3)';}">${t.fitScore}</td>
+  <td class="mn ${dfC}" style="font-weight:700">${f1(t.dfScoreN)}</td>
+  <td class="mn ${t.isChalk?'vr':''}" style="font-size:10px">${fP(t.pOwn)}</td>
+  <td class="mn ${t.leverage>60?'vgl':''}">${f1(t.leverage)}</td>
+  </tr>`;
+    }).join('');
 
-// ── INIT ──────────────────────────────────────────────────
-proc();
+    document.querySelectorAll('#tblBody button[data-ba]').forEach(b=>b.addEventListener('click',()=>{
+      const pos=parseInt(b.dataset.bp);
+      if(b.dataset.ba==='lock')tL(pos); else tE(pos);
+    }));
+  }
+
+  // ── SLOTS ────────────────────────────────────────────────
+  function renderSlots() {
+    const lk = T.filter(x=>x.locked);
+    const slots = document.getElementById('slots');
+    let html = '';
+    for (let i=0; i<4; i++) {
+      const t = lk[i];
+      if (t) {
+        html += `<div class="slot filled">
+  <div><div class="slot-lbl">TEAM ${i+1}</div>
+  <div class="slot-nm">${esc(t.p1)} / ${esc(t.p2)}</div>
+  <div class="slot-sub">FIT ${t.fitScore} · Δ${t.dlta>0?'+':''}${t.dlta} · ${fP(t.pOwn)} OWN</div></div>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+  <span class="slot-sal">${fK(t.sal)}</span>
+  <button class="rm-btn" data-rm="${t.pos}">✕</button>
+  </div></div>`;
+      } else {
+        html += `<div class="slot"><div style="color:var(--tx3);font-size:11px">Team ${i+1} — Empty</div><span style="font-family:var(--mn);font-size:10px;color:var(--tx3)">—</span></div>`;
+      }
+    }
+    slots.innerHTML = html;
+    slots.querySelectorAll('.rm-btn[data-rm]').forEach(b=>b.addEventListener('click',()=>{ const t=T.find(x=>x.pos===parseInt(b.dataset.rm)); if(t){t.locked=false;} renderAll(); }));
+  }
+
+  function updStats() {
+    const lk=T.filter(x=>x.locked), ex=T.filter(x=>x.excluded);
+    const sal=lk.reduce((s,t)=>s+t.sal,0), own=lk.reduce((s,t)=>s+t.pOwn,0);
+    const win=lk.reduce((s,t)=>s+t.impliedWin,0), df=lk.reduce((s,t)=>s+t.dfScoreN,0);
+    document.getElementById('st-l').textContent=lk.length+'/4';
+    document.getElementById('st-e').textContent=ex.length;
+    document.getElementById('st-s').textContent='$'+sal.toLocaleString();
+    document.getElementById('st-r').textContent='$'+(50000-sal).toLocaleString();
+    document.getElementById('st-w').textContent=f1(win)+'%';
+    document.getElementById('st-d').textContent=f1(df);
+    document.getElementById('st-o').textContent=f1(own)+'%';
+    document.getElementById('fab-c').textContent=lk.length+'/4';
+    document.getElementById('fab-s').textContent='$'+(50000-sal).toLocaleString();
+    document.getElementById('fab-w').textContent=f1(win)+'%';
+    document.getElementById('fab-o').textContent=f1(own)+'%';
+  }
+
+  function tL(pos) { const t=T.find(x=>x.pos===pos); if(!t)return; t.locked=!t.locked; if(t.locked){t.excluded=false; if(T.filter(x=>x.locked).length>4){t.locked=false; toast('Max 4 teams.');}} renderAll(); }
+  function tE(pos) { const t=T.find(x=>x.pos===pos); if(!t)return; t.excluded=!t.excluded; if(t.excluded)t.locked=false; renderAll(); }
+  function clrAll() { T.forEach(t=>{t.locked=false;}); renderAll(); }
+  function renderAll() { renderTeams(); renderTable(); renderSlots(); updStats(); }
+
+  // ── OPTIMIZER ────────────────────────────────────────────
+  function gen(type) {
+    const lk=T.filter(x=>x.locked);
+    if(lk.length>4)return toast('Max 4 locks.');
+    const lkS=lk.reduce((s,t)=>s+t.sal,0);
+    if(lkS>50000)return toast('Locked teams exceed $50k.');
+    const pool=T.filter(x=>!x.excluded&&!x.locked), req=4-lk.length;
+    if(pool.length<req)return toast('Not enough available teams.');
+    if(req===0){lastLU={roster:lk,type};showLU(lk,type);return;}
+
+    const unit=100, maxU=Math.floor((50000-lkS)/unit), minU=Math.max(0,Math.ceil((47000-lkS)/unit));
+    let dp=Array(req+1).fill(null).map(()=>Array(maxU+1).fill(null));
+    dp[0][0] = {score:0,r:[]};
+    
+    for(const t of pool){
+      const wt=Math.floor(t.sal/unit);
+      const val=type==='val'?t.dfScoreN:(t.composite+t.leverage*.4);
+      for(let k=req-1;k>=0;k--) for(let w=maxU-wt;w>=0;w--){
+        if(!dp[k][w])continue;
+        const ns=dp[k][w].score+val, nw=w+wt;
+        if(!dp[k+1][nw]||dp[k+1][nw].score<ns) dp[k+1][nw]={score:ns,r:[...dp[k][w].r,t]};
+      }
+    }
+    let best=null;
+    for(let w=maxU;w>=minU;w--){
+      if(!dp[req][w])continue;
+      const cand=dp[req][w];
+      const tO=lk.reduce((s,t)=>s+t.pOwn,0)+cand.r.reduce((s,t)=>s+t.pOwn,0);
+      if(type==='gpp'&&tO>90)continue;
+      if(!best||cand.score>best.score)best=cand;
+    }
+    if(!best)for(let w=maxU;w>=minU;w--)if(dp[req][w]&&(!best||dp[req][w].score>best.score))best=dp[req][w];
+    if(!best)return toast("Can't build lineup. Try clearing exclusions.");
+    const full=[...lk,...best.r];
+    lastLU={roster:full,type};
+    showLU(full,type);
+  }
+
+  function showLU(roster,type) {
+    const box=document.getElementById('optBox'), isDelta=type==='val';
+    box.style.display='block';
+    box.style.borderColor=isDelta?'var(--gld2)':'var(--blu)';
+    box.querySelector('.opt-hdr').style.background=isDelta?'rgba(211,167,34,.8)':'var(--blu)';
+    box.querySelector('.opt-hdr').style.color=isDelta?'#000':'#fff';
+    document.getElementById('opt-t').textContent=isDelta?'⚡ Δ/FIT OPTIMAL':'🚀 GPP OPTIMAL';
+    const sal=roster.reduce((s,t)=>s+t.sal,0), own=roster.reduce((s,t)=>s+t.pOwn,0);
+    const win=roster.reduce((s,t)=>s+t.impliedWin,0), df=roster.reduce((s,t)=>s+t.dfScoreN,0);
+    document.getElementById('opt-s').innerHTML=`<span>SAL $${sal.toLocaleString()}</span><span>WIN ${f1(win)}%</span><span>Δ/FIT ${f1(df)}</span><span>OWN ${f1(own)}%</span>`;
+    document.getElementById('opt-l').innerHTML=roster.sort((a,b)=>b.sal-a.sal).map(t=>`<li><div><div style="font-weight:700">${t.locked?'🔒 ':''}<span style="color:var(--tx)">${esc(t.p1)}</span> / <span style="color:var(--tx2)">${esc(t.p2)}</span></div><div style="font-size:9px;color:var(--tx2);font-family:var(--mn);margin-top:2px">FIT ${t.fitScore} · Δ${t.dlta>0?'+':''}${t.dlta} · WIN ${f1(t.impliedWin)}% · pOWN ${fP(t.pOwn)}</div></div><span class="vgl mn" style="font-weight:700">${fK(t.sal)}</span></li>`).join('');
+  }
+
+  function xCSV(){
+    if(!lastLU)return toast('No lineup. Generate first.');
+    const s=[...lastLU.roster].sort((a,b)=>b.sal-a.sal);
+    let csvData = "Position,P1,P2,Salary,Win%,Fit,pOWN\n";
+    csvData += s.map(t=>`${t.pos},${escCsv(t.p1)},${escCsv(t.p2)},${t.sal},${f1(t.impliedWin)}%,${t.fitScore},${fP(t.pOwn)}`).join('\n');
+    const blob=new Blob([csvData],{type:'text/csv;charset=utf-8'}); 
+    const url=URL.createObjectURL(blob), a=document.createElement('a');
+    a.href=url; a.download='zurich_classic_lineup.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),0);
+  }
+
+  function xPB(id){
+    const r=luCache.get(id);if(!r)return;
+    const s=[...r].sort((a,b)=>b.sal-a.sal);
+    let csvData = "Position,P1,P2,Salary,Win%,Fit,pOWN\n";
+    csvData += s.map(t=>`${t.pos},${escCsv(t.p1)},${escCsv(t.p2)},${t.sal},${f1(t.impliedWin)}%,${t.fitScore},${fP(t.pOwn)}`).join('\n');
+    const blob=new Blob([csvData],{type:'text/csv;charset=utf-8'}); 
+    const url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download='zurich_lu.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),0);
+  }
+
+  // ── PRE-BUILT ─────────────────────────────────────────────
+  function runPre(type) {
+    const sBtn=document.getElementById('simBtn'), dBtn=document.getElementById('dfBtn');
+    sBtn.disabled=true; dBtn.disabled=true;
+    const btn=type==='gpp'?sBtn:dBtn;
+    btn.textContent='⏳ OPTIMIZING...';
+    const pw=document.getElementById('progW'), pf=document.getElementById('progFill'), pt=document.getElementById('progTxt');
+    
+    document.getElementById('simOut').style.display='none';
+    document.getElementById('gppSec').style.display='none';
+    document.getElementById('dfSec').style.display='none';
+    
+    pw.style.display='block'; pf.style.width='0%'; pt.textContent='Running optimizer...';
+
+    setTimeout(()=>{
+      const pool=T.filter(t=>!t.excluded), locked=T.filter(t=>t.locked), avail=pool.filter(t=>!t.locked);
+      const lkS=locked.reduce((s,t)=>s+t.sal,0), unit=100;
+      const maxU=Math.floor((50000-lkS)/unit), minU=Math.max(0,Math.ceil((47000-lkS)/unit)), req=4-locked.length;
+      
+      if(avail.length < req) {
+        pw.style.display='none';
+        sBtn.disabled=false; dBtn.disabled=false;
+        sBtn.textContent='▶ RUN GPP OPTIMIZER'; dBtn.textContent='⚡ RUN Δ/FIT OPTIMIZER';
+        return toast('Not enough available teams.');
+      }
+
+      const lineups=[], used=new Set(), pen=new Map(); 
+
+      for(let att=0;att<20&&lineups.length<5;att++){
+        let dp=Array(req+1).fill(null).map(()=>Array(maxU+1).fill(null));
+        dp[0][0]={score:0,r:[]}; 
+        for(const t of avail){
+          const wt=Math.floor(t.sal/unit), pv=Math.max(0,(type==='gpp'?(t.composite+t.leverage*.4):t.dfScoreN)-(pen.get(t.pos)||0));
+          for(let k=req-1;k>=0;k--) for(let w=maxU-wt;w>=0;w--){
+            if(!dp[k][w])continue;
+            const ns=dp[k][w].score+pv, nw=w+wt;
+            if(!dp[k+1][nw]||dp[k+1][nw].score<ns) dp[k+1][nw]={score:ns,r:[...dp[k][w].r,t]};
+          }
+        }
+        let best=null;
+        for(let w=maxU;w>=minU;w--)if(dp[req][w]&&(!best||dp[req][w].score>best.score))best=dp[req][w];
+        if(!best)break;
+        const full=[...locked,...best.r], key=full.map(t=>t.pos).sort().join('-');
+        if(!used.has(key)){
+          used.add(key);
+          lineups.push({roster:full,sal:full.reduce((s,t)=>s+t.sal,0),df:full.reduce((s,t)=>s+t.dfScoreN,0),own:full.reduce((s,t)=>s+t.pOwn,0),win:full.reduce((s,t)=>s+t.impliedWin,0)});
+        }
+        best.r.forEach(t=>pen.set(t.pos,(pen.get(t.pos)||0)+20));
+      }
+
+      pf.style.width='100%'; pt.textContent=`✓ ${lineups.length} lineups generated.`;
+      document.getElementById('simOut').style.display='block';
+      const secId=type==='gpp'?'gppSec':'dfSec';
+      const gridId=type==='gpp'?'gppGrid':'dfGrid';
+      document.getElementById(secId).style.display='block';
+      document.getElementById(gridId).innerHTML=lineups.map((l,i)=>{
+        const id=`${type}_${i}`;
+        luCache.set(id,[...l.roster]);
+        return `<div class="lu ${type==='gpp'?'g':'v'}">
+  <div class="lu-hdr"><span>#${i+1} ${type==='gpp'?'GPP':'Δ/FIT'}</span><strong>WIN ${f1(l.win)}% · Δ/FIT ${f1(l.df)}</strong></div>
+  <div class="lu-body">${[...l.roster].sort((a,b)=>b.sal-a.sal).map(t=>`<div class="lu-row">
+  <span style="font-weight:600">${esc(t.p1.split(' ')[1]||t.p1)} / ${esc(t.p2.split(' ')[1]||t.p2)} <span style="color:var(--tx3);font-family:var(--mn);font-size:8px">FIT ${t.fitScore}</span></span>
+  <span class="vgl mn" style="font-weight:700">${fK(t.sal)}</span></div>`).join('')}</div>
+  <div class="lu-foot"><span>SAL <strong>$${l.sal.toLocaleString()}</strong></span><span>OWN <strong>${f1(l.own)}%</strong></span><span>WIN <strong>${f1(l.win)}%</strong></span></div>
+  <div class="lu-exp"><button data-xid="${id}">📥 CSV</button></div></div>`;
+      }).join('');
+
+      document.querySelectorAll(`#${gridId} button[data-xid]`).forEach(b=>b.addEventListener('click',()=>xPB(b.dataset.xid)));
+      sBtn.disabled=false; dBtn.disabled=false;
+      sBtn.textContent='▶ RUN GPP OPTIMIZER'; dBtn.textContent='⚡ RUN Δ/FIT OPTIMIZER';
+      setTimeout(()=>document.getElementById(secId).scrollIntoView({behavior:'smooth'}),200);
+    },50);
+  }
+
+  // Execute Core Parsing
+  try {
+    proc();
+  } catch (error) {
+    console.error("DFS Script Error:", error);
+    toast("Check Developer Console. Your TEAMS_RAW data likely contains a syntax error.");
+  }
+});
 </script>
 
 </body>
