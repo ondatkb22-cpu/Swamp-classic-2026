@@ -1,3 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zurich Classic — Team DFS Optimizer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#05070A;--sf:#0D1117;--sf2:#161B22;--bd:#21262D;--bd2:#30363D;--tx:#E6EDF3;--tx2:#8B949E;--tx3:#484F58;--grn:#3FB950;--red:#F85149;--gld:#D29922;--gld2:#E3B341;--blu:#58A6FF;--pur:#BC8CFF;--teal:#39D353;--fn:'DM Sans',sans-serif;--mn:'DM Mono',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--tx);font-family:var(--fn);font-size:13px;min-height:100vh;padding-bottom:100px}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 50% -10%,rgba(88,166,255,.05),transparent 60%);pointer-events:none;z-index:-1}
+.c{max-width:1400px;margin:0 auto;padding:14px}
+/* HEADER */
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;border-bottom:1px solid var(--bd);margin-bottom:14px;flex-wrap:wrap;gap:10px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--blu),var(--pur));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.logo h1{font-size:20px;font-weight:700;letter-spacing:-.3px}
+.logo-sub{font-size:10px;color:var(--tx2);margin-top:2px;font-family:var(--mn);letter-spacing:.5px}
+.tag{display:inline-block;font-size:8px;background:var(--blu);color:#000;padding:2px 6px;border-radius:5px;font-weight:700;margin-left:6px;vertical-align:middle}
+.tag-team{background:var(--pur)}
+.hdr-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start}
+.meta-pill{background:var(--sf);border:1px solid var(--bd);border-radius:6px;padding:5px 10px;font-size:9px;font-family:var(--mn);color:var(--tx2);text-align:center}
+.meta-pill strong{display:block;font-size:12px;color:var(--tx);font-weight:700}
+/* TABS */
+.tabs{display:flex;gap:4px;margin-bottom:14px;background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:3px}
+.tab{flex:1;padding:9px;background:transparent;border:none;color:var(--tx3);font-family:var(--fn);font-size:11px;font-weight:600;cursor:pointer;border-radius:7px;transition:.15s;text-align:center}
+.tab:hover{color:var(--tx2)}
+.tab.on{background:var(--sf2);color:var(--tx);border:1px solid var(--bd2)}
+/* PANELS */
+.pnl{display:none}
+.pnl.on{display:block}
+/* TEAM CARDS GRID */
+.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;margin-bottom:12px}
+.team-card{background:var(--sf);border:1px solid var(--bd);border-radius:10px;overflow:hidden;cursor:pointer;transition:.2s;position:relative}
+.team-card:hover{border-color:var(--blu);transform:translateY(-1px);box-shadow:0 4px 20px rgba(88,166,255,.08)}
+.team-card.selected{border-color:var(--gld2);background:rgba(211,167,34,.04)}
+.team-card.locked{border-color:var(--pur)}
+.tc-hdr{padding:8px 12px;background:var(--sf2);border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center}
+.tc-rank{font-size:9px;font-family:var(--mn);color:var(--tx3)}
+.tc-sal{font-size:12px;font-weight:700;color:var(--gld2);font-family:var(--mn)}
+.tc-body{padding:10px 12px}
+.tc-player{display:flex;align-items:center;gap:7px;padding:4px 0}
+.tc-player:first-child{border-bottom:1px dashed var(--bd);margin-bottom:3px;padding-bottom:7px}
+.tc-num{width:18px;height:18px;border-radius:4px;background:var(--sf2);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:var(--tx3);flex-shrink:0;font-family:var(--mn)}
+.tc-name{font-weight:600;font-size:12px;flex:1}
+.tc-country{font-size:9px;color:var(--tx3);font-family:var(--mn)}
+.tc-foot{padding:6px 12px;background:var(--sf2);border-top:1px solid var(--bd);display:flex;gap:6px;flex-wrap:wrap}
+.tc-badge{font-size:8px;font-family:var(--mn);font-weight:700;padding:1px 5px;border-radius:4px}
+.b-steam{background:rgba(63,185,80,.12);color:var(--grn);border:1px solid rgba(63,185,80,.2)}
+.b-chalk{background:rgba(248,81,73,.1);color:var(--red);border:1px solid rgba(248,81,73,.2)}
+.b-value{background:rgba(211,167,34,.12);color:var(--gld2);border:1px solid rgba(211,167,34,.2)}
+.b-lev{background:rgba(188,140,255,.12);color:var(--pur);border:1px solid rgba(188,140,255,.2)}
+.lock-btn{position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:5px;border:1px solid var(--bd);background:transparent;color:var(--tx3);cursor:pointer;font-size:9px;display:flex;align-items:center;justify-content:center;transition:.15s;z-index:2}
+.lock-btn:hover{background:var(--bd);color:var(--tx)}
+.lock-btn.on{background:rgba(211,167,34,.15);border-color:var(--gld2);color:var(--gld2)}
+/* TOOLBAR */
+.tb{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.srch{background:var(--sf);border:1px solid var(--bd);color:var(--tx);padding:8px 12px;border-radius:8px;font-size:12px;width:200px;outline:none;font-family:var(--fn)}
+.srch:focus{border-color:var(--blu)}
+.chip{background:transparent;border:1px solid var(--bd);color:var(--tx3);padding:6px 11px;border-radius:12px;font-size:9px;font-weight:700;cursor:pointer;transition:.15s;font-family:var(--fn)}
+.chip:hover{border-color:var(--tx2);color:var(--tx2)}
+.chip.on{background:var(--tx);color:var(--bg);border-color:var(--tx)}
+.sort-sel{background:var(--sf);border:1px solid var(--bd);color:var(--tx);padding:7px 10px;border-radius:8px;font-size:10px;font-family:var(--mn);outline:none;cursor:pointer}
+/* BUILD PANEL */
+.bwrap{display:grid;grid-template-columns:1fr 300px;gap:12px}
+@media(max-width:800px){.bwrap{grid-template-columns:1fr}}
+.bcard{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:16px}
+.bcard h3{font-size:14px;font-weight:700;margin-bottom:4px}
+.bcard>p{font-size:10px;color:var(--tx2);margin-bottom:12px}
+.slot-grid{display:grid;gap:6px;margin-bottom:12px}
+.slot{background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center}
+.slot.filled{border-color:var(--gld2);background:rgba(211,167,34,.03)}
+.slot-lbl{font-size:9px;font-family:var(--mn);color:var(--tx3);margin-bottom:2px}
+.slot-nm{font-size:12px;font-weight:600}
+.slot-sub{font-size:9px;color:var(--tx2);font-family:var(--mn)}
+.slot-sal{font-size:11px;font-weight:700;color:var(--gld2);font-family:var(--mn)}
+.rm-btn{width:20px;height:20px;border-radius:4px;border:1px solid var(--bd);background:transparent;color:var(--tx3);cursor:pointer;font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s}
+.rm-btn:hover{border-color:var(--red);color:var(--red)}
+.gen-btns{display:flex;gap:6px;flex-wrap:wrap}
+.gbtn{flex:1;padding:10px;border:none;border-radius:8px;font-family:var(--fn);font-size:12px;font-weight:700;cursor:pointer;transition:.2s;min-width:100px}
+.gbtn:disabled{opacity:.5;cursor:wait}
+.gbtn.gpp{background:var(--blu);color:#fff}
+.gbtn.gpp:hover:not(:disabled){background:#4096ee}
+.gbtn.val{background:rgba(211,167,34,.2);border:1px solid var(--gld2);color:var(--gld2)}
+.gbtn.val:hover:not(:disabled){background:rgba(211,167,34,.3)}
+.gbtn.clr{background:transparent;border:1px solid var(--bd2);color:var(--tx2)}
+.gbtn.clr:hover{border-color:var(--red);color:var(--red)}
+/* STATS BOX */
+.stat-box{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px;height:fit-content}
+.stat-box h4{font-size:13px;font-weight:700;margin-bottom:10px}
+.sr{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed var(--bd)}
+.sr:last-child{border:none}
+.sl{font-size:9px;color:var(--tx2);font-family:var(--mn)}
+.sv{font-size:11px;font-weight:700;font-family:var(--mn)}
+/* OPT BOX */
+.opt-box{background:var(--sf);border:2px solid var(--blu);border-radius:10px;margin-top:12px;display:none;overflow:hidden}
+.opt-hdr{background:var(--blu);color:#fff;padding:10px 14px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.opt-hdr h4{font-size:13px;font-weight:700}
+.opt-stats{font-family:var(--mn);font-size:9px;display:flex;gap:10px;flex-wrap:wrap}
+.opt-list{list-style:none}
+.opt-list li{padding:10px 14px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;font-size:12px}
+.opt-list li:last-child{border:none}
+.exp-btn{margin:7px 14px 10px;background:transparent;border:1px solid var(--grn);color:var(--grn);padding:7px;border-radius:6px;font-size:9px;font-weight:700;cursor:pointer;font-family:var(--mn);width:calc(100% - 28px);transition:.2s;text-align:center;display:block}
+.exp-btn:hover{background:var(--grn);color:#000}
+/* TABLE VIEW */
+.tw{background:var(--sf);border:1px solid var(--bd);border-radius:10px;overflow:auto;max-height:70vh}
+.tw::-webkit-scrollbar{width:5px;height:5px}.tw::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
+table{width:100%;border-collapse:collapse;min-width:800px}
+th{padding:9px 8px;font-size:10px;font-weight:700;color:var(--tx3);border-bottom:1px solid var(--bd);cursor:pointer;text-align:center;user-select:none;position:sticky;top:0;background:var(--sf);z-index:5;white-space:nowrap}
+th:first-child{text-align:left;padding-left:12px;left:0;z-index:10;border-right:1px solid var(--bd)}
+th.act{color:var(--blu)}
+td{padding:7px 8px;border-bottom:1px solid var(--bd);font-size:11px;text-align:center;vertical-align:middle}
+td:first-child{text-align:left;padding-left:12px;position:sticky;left:0;background:var(--sf);z-index:3;border-right:1px solid var(--bd)}
+tbody tr:hover td{background:var(--sf2)!important}
+tr:last-child td{border-bottom:none}
+.mn{font-family:var(--mn)}
+.vg{color:var(--grn);font-weight:700}.vr{color:var(--red)}.vgl{color:var(--gld2);font-weight:700}
+.team-nm{font-weight:700;font-size:12px;display:flex;flex-direction:column;gap:2px}
+.p1{color:var(--tx)}
+.p2{color:var(--tx2);font-size:10px}
+.acts{display:flex;gap:3px;margin-top:3px}
+.bi{width:22px;height:22px;border-radius:4px;border:1px solid var(--bd);background:transparent;color:var(--tx3);cursor:pointer;font-size:9px;display:flex;align-items:center;justify-content:center;transition:.15s}
+.bi:hover{background:var(--bd);color:var(--tx)}
+.bi.lk{background:rgba(211,167,34,.12);border-color:var(--gld2);color:var(--gld2)}
+.bi.ex{background:rgba(248,81,73,.1);border-color:var(--red);color:var(--red)}
+.row-lk td{background:rgba(211,167,34,.02)!important}
+.row-ex td{opacity:.25}.row-ex td:first-child{opacity:1}
+/* PRE */
+.pre-hdr{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:16px;text-align:center;margin-bottom:12px}
+.pre-hdr h2{font-size:17px;font-weight:700;margin-bottom:5px}
+.pre-hdr p{font-size:11px;color:var(--tx2);margin-bottom:12px}
+.pre-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.pbtn{border:none;padding:10px 18px;border-radius:8px;font-family:var(--fn);font-size:12px;font-weight:700;cursor:pointer;transition:.2s}
+.pbtn:disabled{opacity:.5;cursor:wait}
+.pbtn.g{background:var(--blu);color:#fff}
+.pbtn.g:hover:not(:disabled){background:#4096ee}
+.pbtn.v{background:rgba(211,167,34,.15);border:1px solid var(--gld2);color:var(--gld2)}
+.pbtn.v:hover:not(:disabled){background:rgba(211,167,34,.25)}
+.prog-w{display:none;margin-top:10px}
+.prog-bg{height:4px;background:var(--sf2);border-radius:2px;overflow:hidden;margin-bottom:4px;border:1px solid var(--bd)}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--blu),var(--grn));width:0%;transition:width.1s;border-radius:2px}
+.prog-txt{font-size:9px;color:var(--tx2);font-family:var(--mn)}
+.sim-sec{margin-top:16px}
+.sim-sec h3{font-size:13px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.cn{font-size:8px;padding:2px 5px;border-radius:5px;font-family:var(--mn);font-weight:700}
+.cn-g{background:var(--blu);color:#fff}
+.cn-v{background:rgba(211,167,34,.2);color:var(--gld2);border:1px solid rgba(211,167,34,.4)}
+.lu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+.lu{background:var(--sf);border:1px solid var(--bd);border-radius:8px;overflow:hidden;transition:.2s}
+.lu:hover{transform:translateY(-2px);border-color:var(--blu)}
+.lu.g{border-left:3px solid var(--blu)}.lu.v{border-left:3px solid var(--gld2)}
+.lu-hdr{padding:7px 10px;background:var(--sf2);display:flex;justify-content:space-between;border-bottom:1px solid var(--bd);font-size:9px;font-family:var(--mn);color:var(--tx2)}
+.lu-hdr strong{color:var(--tx)}
+.lu-body{padding:6px 10px}
+.lu-row{display:flex;justify-content:space-between;padding:3px 0;font-size:10px;border-bottom:1px dashed var(--bd)}
+.lu-row:last-child{border:none}
+.lu-foot{padding:6px 10px;background:var(--sf2);border-top:1px solid var(--bd);font-family:var(--mn);font-size:8px;color:var(--tx2);display:flex;justify-content:space-between;flex-wrap:wrap;gap:3px}
+.lu-foot strong{color:var(--tx)}
+.lu-exp{padding:4px 10px;border-top:1px solid var(--bd);text-align:center}
+.lu-exp button{background:transparent;border:1px solid var(--grn);color:var(--grn);padding:3px 8px;border-radius:4px;font-size:8px;font-weight:700;cursor:pointer;font-family:var(--mn);transition:.2s}
+.lu-exp button:hover{background:var(--grn);color:#000}
+/* GUIDE */
+.g-hero{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:20px;text-align:center;margin-bottom:10px}
+.g-hero h2{font-size:18px;font-weight:700;margin-bottom:6px}
+.g-hero p{font-size:11px;color:var(--tx2);line-height:1.6;max-width:600px;margin:0 auto}
+.g-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:10px}
+.g-card{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:14px;transition:.2s}
+.g-card:hover{border-color:var(--blu);transform:translateY(-1px)}
+.g-card h3{font-size:12px;font-weight:700;margin-bottom:4px}
+.g-card p{font-size:10px;color:var(--tx2);line-height:1.5}
+.g-go{margin-top:8px;background:transparent;border:1px solid var(--blu);color:var(--blu);padding:5px 10px;border-radius:5px;font-size:9px;font-weight:700;cursor:pointer;font-family:var(--mn);transition:.2s;display:inline-block}
+.g-go:hover{background:var(--blu);color:#fff}
+.g-sec{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:14px;margin-bottom:8px}
+.g-sec h3{font-size:12px;font-weight:700;margin-bottom:7px;display:flex;align-items:center;gap:6px}
+.g-edge{padding:10px;background:rgba(63,185,80,.04);border:1px solid rgba(63,185,80,.15);border-radius:6px;margin-top:7px}
+.g-edge-t{font-size:10px;font-weight:700;color:var(--grn);margin-bottom:4px}
+.g-fade{padding:10px;background:rgba(248,81,73,.04);border:1px solid rgba(248,81,73,.15);border-radius:6px;margin-top:7px}
+.g-fade-t{font-size:10px;font-weight:700;color:var(--red);margin-bottom:4px}
+.g-edge p,.g-fade p{font-size:10px;color:var(--tx2);line-height:1.5}
+/* FAB */
+.fab-w{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:90%;max-width:640px;z-index:100}
+.fab{background:rgba(13,17,23,.94);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 10px 32px rgba(0,0,0,.7);cursor:pointer;transition:.2s}
+.fab:hover{border-color:rgba(255,255,255,.12)}
+.fab-stats{display:flex;gap:14px}
+.fab-stat{display:flex;flex-direction:column}
+.fab-v{font-size:12px;font-weight:700;font-family:var(--mn)}
+.fab-l{font-size:7px;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-top:1px}
+/* TOAST */
+.toast{position:fixed;top:12px;left:50%;transform:translateX(-50%) translateY(-20px);background:var(--sf);border:1px solid var(--red);color:var(--red);padding:8px 14px;border-radius:6px;font-size:11px;font-weight:600;z-index:200;opacity:0;transition:opacity.2s,transform.2s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:640px){
+.team-grid{grid-template-columns:1fr}
+table{min-width:0;table-layout:fixed}th,td{padding:4px 3px;font-size:9px}
+th:first-child,td:first-child{width:110px;min-width:110px;padding-left:5px}
+}
+</style>
+</head>
+<body>
+<div class="c">
+
+<header class="hdr">
+  <div class="logo">
+    <div class="logo-icon">⛳</div>
+    <div>
+      <h1>Zurich Classic <span class="tag tag-team">TEAM</span></h1>
+      <div class="logo-sub">TPC LOUISIANA · NEW ORLEANS · 74 TEAMS · $9.1M PURSE</div>
+    </div>
+  </div>
+  <div class="hdr-meta">
+    <div class="meta-pill"><strong>74</strong>Teams</div>
+    <div class="meta-pill"><strong>$50k</strong>DK Cap</div>
+    <div class="meta-pill"><strong>4</strong>Slots</div>
+    <div class="meta-pill"><strong>No Cut</strong>Format</div>
+    <div class="meta-pill"><strong>Alt/BF</strong>Rounds</div>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab on" data-p="guide">📚 GUIDE</button>
+  <button class="tab" data-p="teams">🏌️ TEAMS</button>
+  <button class="tab" data-p="table">📊 TABLE</button>
+  <button class="tab" data-p="build">🛠️ BUILD</button>
+  <button class="tab" data-p="pre">🎰 PRE-BUILT</button>
+</div>
+
+<div class="pnl on" id="pnl-guide">
+  <div class="g-hero">
+    <h2>🤝 Zurich Classic — Team Format DFS</h2>
+    <p>The only team event on the PGA Tour. 74 two-man teams compete over 4 rounds — alternate shot (R1, R3) and best ball (R2, R4). DraftKings uses 4-team lineups under a $50k salary cap. This completely changes the math vs. individual events.</p>
+  </div>
+  <div class="g-cards">
+    <div class="g-card"><h3>🔄 Format Matters</h3><p>Alternate shot rewards ball-striking consistency and partnership chemistry. Best ball rewards pure upside and ceiling. Your picks need to be good in BOTH formats over 4 rounds.</p><button class="g-go" data-go="teams">VIEW TEAMS →</button></div>
+    <div class="g-card"><h3>⚡ Value Signal</h3><p>Positive Delta = DK underpriced this team vs. the betting market. In a team event, pricing mistakes are amplified because you need 4 teams under cap, not 6 individuals.</p><button class="g-go" data-go="table">VIEW TABLE →</button></div>
+    <div class="g-card"><h3>🚀 GPP Strategy</h3><p>Best ball rounds are where GPP lineups are won or lost. Target teams with at least one elite ball-striker (SG:APP) and one elite putter (SG:Putt) — they complement in alternate shot and both go off in best ball.</p><button class="g-go" data-go="build">BUILD LINEUP →</button></div>
+    <div class="g-card"><h3>📸 Key Edges</h3><p>TPC Louisiana is a bombers track with soft conditions typical in April. Length + SG:APP off the tee matters more here than at Harbour Town. Teams with two long hitters are particularly valuable.</p><button class="g-go" data-go="pre">PRE-BUILT →</button></div>
+  </div>
+  <div class="g-sec">
+    <h3>💡 Top Teams to Watch</h3>
+    <div class="g-edge">
+      <div class="g-edge-t">✅ EARLY TARGETS</div>
+      <p><strong>Clark / Moore (1/80)</strong> — Wyndham Clark won here in 2023 with teammate. Taylor Moore is a consistent ball-striker. Strong value potential.<br><br>
+      <strong>Koepka / Lowry (3/80)</strong> — Elite chemistry. Both major champions. Koepka's length + Lowry's scrambling = elite alternate shot combo. Lowry won here with Pádraig Harrington.<br><br>
+      <strong>Fitzpatrick / Fitzpatrick (2/80)</strong> — Brothers. Proven team chemistry. Matt is in top form post-RBC.<br><br>
+      <strong>Griffin / Novak (12/80)</strong> — Ben Griffin in excellent form, Andrew Novak is a strong value pairing. Under-discussed.</p>
+    </div>
+    <div class="g-fade">
+      <div class="g-fade-t">⚠️ CAUTION</div>
+      <p><strong>High ownership chalk</strong> — Clark/Moore will be massively owned. Their salary likely reflects this.<br><br>
+      <strong>Untested partnerships</strong> — Teams playing together for the first time (many in the 40-74 range) have significant alternate shot risk. Chemistry in alt shot is real.<br><br>
+      <strong>Players out of form</strong> — Both members need to be healthy and competitive. Check injury reports before lock.</p>
+    </div>
+  </div>
+</div>
+
+<div class="pnl" id="pnl-teams">
+  <div class="tb">
+    <input class="srch" id="t-srch" type="search" placeholder="Search player or team...">
+    <select class="sort-sel" id="t-sort">
+      <option value="rank">Sort: Field Rank</option>
+      <option value="sal">Sort: Salary ↓</option>
+      <option value="sal-a">Sort: Salary ↑</option>
+      <option value="dlta">Sort: Delta ↓</option>
+      <option value="fit">Sort: Fit Score ↓</option>
+    </select>
+    <button class="chip on" data-f="all">ALL</button>
+    <button class="chip" data-f="value">💰 VALUE</button>
+    <button class="chip" data-f="chalk">🐑 CHALK</button>
+    <button class="chip" data-f="locked">🔒 LOCKED</button>
+  </div>
+  <div class="team-grid" id="teamGrid"></div>
+</div>
+
+<div class="pnl" id="pnl-table">
+  <div class="tb">
+    <input class="srch" id="tbl-srch" type="search" placeholder="Search...">
+    <button class="chip on" data-tf="all">ALL</button>
+    <button class="chip" data-tf="value">💰 VALUE</button>
+    <button class="chip" data-tf="chalk">🐑 CHALK</button>
+  </div>
+  <div class="tw">
+    <table id="mainTbl">
+      <thead><tr>
+        <th data-c="pos">POS</th>
+        <th data-c="teamName">🏌️ TEAM</th>
+        <th data-c="sal">💵 SAL</th>
+        <th data-c="impliedWin">🎲 WIN%</th>
+        <th data-c="dlta">⚖️ Δ</th>
+        <th data-c="fitScore">🎯 FIT</th>
+        <th data-c="dfScore">⚡ Δ/FIT</th>
+        <th data-c="pOwn">👥 pOWN</th>
+        <th data-c="leverage">📈 LEV</th>
+      </tr></thead>
+      <tbody id="tblBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="pnl" id="pnl-build">
+  <div class="bwrap">
+    <div class="bcard">
+      <h3>🛠️ Team Lineup Builder</h3>
+      <p>4 teams · $50k cap · Lock teams in the Teams or Table view first.</p>
+      <div class="slot-grid" id="slots"></div>
+      <div class="gen-btns">
+        <button class="gbtn gpp" data-g="gpp">🚀 GPP FILL</button>
+        <button class="gbtn val" data-g="val">⚡ Δ/FIT FILL</button>
+        <button class="gbtn clr" id="clrBtn">CLR</button>
+      </div>
+      <div class="opt-box" id="optBox">
+        <div class="opt-hdr"><h4 id="opt-t">Optimal Lineup</h4><div class="opt-stats" id="opt-s"></div></div>
+        <ul class="opt-list" id="opt-l"></ul>
+        <button class="exp-btn" id="expBtn">📥 EXPORT DRAFTKINGS CSV</button>
+      </div>
+    </div>
+    <div class="stat-box">
+      <h4>📋 Roster State</h4>
+      <div class="sr"><span class="sl">LOCKED</span><span class="sv" id="st-l">0/4</span></div>
+      <div class="sr"><span class="sl">EXCLUDED</span><span class="sv" id="st-e">0</span></div>
+      <div class="sr"><span class="sl">CAP USED</span><span class="sv vg" id="st-s">$0</span></div>
+      <div class="sr"><span class="sl">CAP LEFT</span><span class="sv" id="st-r">$50,000</span></div>
+      <div class="sr"><span class="sl">PROJ WIN%</span><span class="sv" id="st-w">0.0%</span></div>
+      <div class="sr"><span class="sl">Δ/FIT</span><span class="sv vgl" id="st-d">0.0</span></div>
+      <div class="sr"><span class="sl">TOTAL OWN</span><span class="sv vgl" id="st-o">0.0%</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="pnl" id="pnl-pre">
+  <div class="pre-hdr">
+    <h2>🎰 Pre-Built Team Lineups</h2>
+    <p>4-team lineups optimized under $50k. GPP mode maximizes ceiling. Δ/Fit mode maximizes market value × course fit.</p>
+    <div class="pre-btns">
+      <button class="pbtn g" id="simBtn">▶ RUN GPP OPTIMIZER</button>
+      <button class="pbtn v" id="dfBtn">⚡ RUN Δ/FIT OPTIMIZER</button>
+    </div>
+    <div class="prog-w" id="progW">
+      <div class="prog-bg"><div class="prog-fill" id="progFill"></div></div>
+      <div class="prog-txt" id="progTxt">Initializing...</div>
+    </div>
+  </div>
+  <div id="simOut" style="display:none">
+    <div class="sim-sec" id="gppSec" style="display:none">
+      <h3>🚀 GPP Lineups <span class="cn cn-g">KNAPSACK DP · TOP 5</span></h3>
+      <div class="lu-grid" id="gppGrid"></div>
+    </div>
+    <div class="sim-sec" id="dfSec" style="display:none">
+      <h3>⚡ Δ/Fit Lineups <span class="cn cn-v">DELTA × FIT · TOP 5</span></h3>
+      <div class="lu-grid" id="dfGrid"></div>
+    </div>
+  </div>
+</div>
+
+</div><div class="fab-w">
+  <div class="fab" id="fabEl" tabindex="0" role="button">
+    <div class="fab-stats">
+      <div class="fab-stat"><span class="fab-v" id="fab-c">0/4</span><span class="fab-l">Teams</span></div>
+      <div class="fab-stat"><span class="fab-v vg" id="fab-s">$50,000</span><span class="fab-l">Rem Cap</span></div>
+      <div class="fab-stat"><span class="fab-v" id="fab-w">0.0%</span><span class="fab-l">Win%</span></div>
+      <div class="fab-stat"><span class="fab-v vgl" id="fab-o">0.0%</span><span class="fab-l">pOWN</span></div>
+    </div>
+    <div style="color:var(--tx3);font-size:10px;font-family:var(--mn)">BUILD →</div>
+  </div>
+</div>
+<div class="toast" id="toastEl"></div>
+
 <script>
 'use strict';
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -12,12 +378,20 @@ const toast = msg=>{ const el=document.getElementById('toastEl'); el.textContent
 const luCache = new Map();
 
 // ── TEAM DATABASE ────
-const TEAMS_RAW = []; // FIXED: Added missing array brackets
+// Added some dummy data so the prototype renders correctly.
+const TEAMS_RAW = [
+  { pos: 1, p1: "Wyndham Clark", p2: "Taylor Moore", odds: 1200, sal: 10500, fit: 85 },
+  { pos: 2, p1: "Matt Fitzpatrick", p2: "Alex Fitzpatrick", odds: 1500, sal: 9800, fit: 75 },
+  { pos: 3, p1: "Brooks Koepka", p2: "Shane Lowry", odds: 800, sal: 11200, fit: 90 },
+  { pos: 4, p1: "Ben Griffin", p2: "Andrew Novak", odds: 4500, sal: 7200, fit: 65 },
+  { pos: 5, p1: "Collin Morikawa", p2: "Kurt Kitayama", odds: 1400, sal: 10200, fit: 80 },
+  { pos: 6, p1: "Sahith Theegala", p2: "Will Zalatoris", odds: 1600, sal: 9900, fit: 78 }
+];
 
 // CHALK teams (will be highly owned)
 const CHALK_TEAMS = new Set([1, 2, 3, 4, 5, 6]);
 
-let T = [], CF = 'all', TF = 'all', SC = 'pos', SA = false, lastLU = null; // FIXED: Added missing array brackets
+let T = [], CF = 'all', TF = 'all', SC = 'pos', SA = false, lastLU = null;
 
 function proc() {
   // Compute implied win prob and ranking signals
@@ -31,8 +405,8 @@ function proc() {
   });
 
   // Salary rank and odds rank for delta
-  [...T].sort((a,b)=>b.sal-a.sal).forEach((t,i)=>t.salRank=i+1); // FIXED: Added object reference
-  [...T].sort((a,b)=>b.impliedWin-a.impliedWin).forEach((t,i)=>t.oddsRank=i+1); // FIXED: Added object reference
+  [...T].sort((a,b)=>b.sal-a.sal).forEach((t,i)=>t.salRank=i+1);
+  [...T].sort((a,b)=>b.impliedWin-a.impliedWin).forEach((t,i)=>t.oddsRank=i+1);
 
   let tRO = 0;
   T.forEach(t => {
@@ -228,7 +602,7 @@ function gen(type) {
 
   const unit=100, maxU=Math.floor((50000-lkS)/unit), minU=Math.max(0,Math.ceil((47000-lkS)/unit));
   let dp=Array(req+1).fill(null).map(()=>Array(maxU+1).fill(null));
-  dp[0][0] = {score:0,r:[]}; // FIXED: Index and array bracket
+  dp[0][0] = {score:0,r:[]};
   
   for(const t of pool){
     const wt=Math.floor(t.sal/unit);
@@ -270,12 +644,12 @@ function showLU(roster,type) {
 function xCSV(){
   if(!lastLU)return toast('No lineup. Generate first.');
   const s=[...lastLU.roster].sort((a,b)=>b.sal-a.sal);
-  const blob=new Blob([],{type:'text/csv;charset=utf-8'}); // FIXED: Added fallback empty array
+  const blob=new Blob([],{type:'text/csv;charset=utf-8'}); 
   const url=URL.createObjectURL(blob), a=document.createElement('a');
   a.href=url; a.download='zurich_classic_lineup.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(()=>URL.revokeObjectURL(url),0);
 }
-function xPB(id){const r=luCache.get(id);if(!r)return;const s=[...r].sort((a,b)=>b.sal-a.sal);const blob=new Blob([],{type:'text/csv;charset=utf-8'}); // FIXED: Added fallback empty array
+function xPB(id){const r=luCache.get(id);if(!r)return;const s=[...r].sort((a,b)=>b.sal-a.sal);const blob=new Blob([],{type:'text/csv;charset=utf-8'}); 
 const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='zurich_lu.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),0);}
 
 // ── PRE-BUILT ─────────────────────────────────────────────
@@ -304,11 +678,11 @@ function runPre(type) {
       return toast('Not enough available teams.');
     }
 
-    const lineups=[], used=new Set(), pen=new Map(); // FIXED: Added missing array bracket
+    const lineups=[], used=new Set(), pen=new Map(); 
 
     for(let att=0;att<20&&lineups.length<5;att++){
       let dp=Array(req+1).fill(null).map(()=>Array(maxU+1).fill(null));
-      dp[0][0]={score:0,r:[]}; // FIXED: Index and array bracket
+      dp[0][0]={score:0,r:[]}; 
       for(const t of avail){
         const wt=Math.floor(t.sal/unit), pv=Math.max(0,(type==='gpp'?(t.composite+t.leverage*.4):t.dfScoreN)-(pen.get(t.pos)||0));
         for(let k=req-1;k>=0;k--) for(let w=maxU-wt;w>=0;w--){
@@ -397,3 +771,6 @@ document.getElementById('fabEl').addEventListener('keydown',e=>{ if(e.key==='Ent
 // ── INIT ──────────────────────────────────────────────────
 proc();
 </script>
+
+</body>
+</html>
