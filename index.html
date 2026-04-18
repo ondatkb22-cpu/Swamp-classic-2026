@@ -351,7 +351,9 @@ th:first-child,td:first-child{width:110px;min-width:110px;padding-left:5px}
   </div>
 </div>
 
-</div><div class="fab-w">
+</div>
+
+<div class="fab-w">
   <div class="fab" id="fabEl" tabindex="0" role="button">
     <div class="fab-stats">
       <div class="fab-stat"><span class="fab-v" id="fab-c">0/4</span><span class="fab-l">Teams</span></div>
@@ -377,7 +379,7 @@ let _tt=null;
 const toast = msg=>{ const el=document.getElementById('toastEl'); el.textContent=msg; el.classList.add('show'); clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'),3000); };
 const luCache = new Map();
 
-// ── TEAM DATABASE ────────────────────────────────────────
+// ── TEAM DATABASE (Reconstructed from provided images) ────
 const TEAMS_RAW =;
 
 // CHALK teams (will be highly owned)
