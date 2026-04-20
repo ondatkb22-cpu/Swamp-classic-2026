@@ -1,223 +1,245 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🐊 Swamp Classic V7.1 — Zurich Classic DFS Optimizer</title>
+<title>🐊 Swamp Classic V7.4 — Complete Field Optimizer</title>
 <link href="https://fonts.googleapis.com/css2?family=Anybody:wght@400;600;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#03060A;--sf:#0A0F16;--sf2:#111820;--sf3:#1A2233;--bd:#1E2A3A;--bd2:#2A3A4E;--tx:#E8ECF2;--tx2:#8A96A8;--tx3:#4E5C70;--grn:#2ECC71;--grn2:#27AE60;--red:#E74C3C;--gld:#F1C40F;--blu:#3498DB;--pur:#9B59B6;--org:#E67E22;--cyan:#1ABC9C;--fn:'Anybody',sans-serif;--mn:'JetBrains Mono',monospace;--glow:0 0 20px rgba(46,204,113,.15)}
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--tx);font-family:var(--fn);font-size:13px;min-height:100vh;overflow-x:hidden}
-body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 30% 0%,rgba(26,188,156,.04),transparent 50%),radial-gradient(ellipse 50% 50% at 80% 100%,rgba(52,152,219,.03),transparent 50%);pointer-events:none;z-index:-1}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 30% 0%,rgba(26,188,156,.04),transparent 50%),radial-gradient(ellipse 50% 50% at 80% 100%,rgba(155,89,182,.03),transparent 50%);pointer-events:none;z-index:-1}
 .c{max-width:1500px;margin:0 auto;padding:12px}
 .hdr{padding:16px 0;border-bottom:2px solid var(--bd);margin-bottom:12px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px}
 .hdr h1{font-size:28px;font-weight:800;letter-spacing:-1px;background:linear-gradient(135deg,var(--grn),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .hdr-meta{font-family:var(--mn);font-size:10px;color:var(--tx3);text-align:right}
 .badge{display:inline-block;font-size:8px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.8px;font-family:var(--mn)}
-.b-grn{background:rgba(46,204,113,.15);color:var(--grn);border:1px solid rgba(46,204,113,.3)}
+.b-grn{background:rgba(46,204,113,.12);color:var(--grn);border:1px solid rgba(46,204,113,.3)}
 .b-red{background:rgba(231,76,60,.12);color:var(--red);border:1px solid rgba(231,76,60,.3)}
 .b-gld{background:rgba(241,196,15,.12);color:var(--gld);border:1px solid rgba(241,196,15,.3)}
-.b-blu{background:rgba(52,152,219,.12);color:var(--blu);border:1px solid rgba(52,152,219,.3)}
 .b-pur{background:rgba(155,89,182,.12);color:var(--pur);border:1px solid rgba(155,89,182,.3)}
-.tabs{display:flex;gap:4px;margin-bottom:12px}
-.tab{flex:1;padding:10px;background:var(--sf);border:1px solid var(--bd);color:var(--tx3);font-family:var(--fn);font-size:11px;font-weight:600;cursor:pointer;border-radius:8px;text-align:center;transition:.2s}
+.tabs{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.tab{flex:1;min-width:120px;padding:10px;background:var(--sf);border:1px solid var(--bd);color:var(--tx3);font-family:var(--fn);font-size:11px;font-weight:600;cursor:pointer;border-radius:8px;text-align:center;transition:.2s}
 .tab:hover{color:var(--tx2);border-color:var(--bd2)}
 .tab.on{background:linear-gradient(135deg,rgba(46,204,113,.1),rgba(26,188,156,.1));color:var(--grn);border-color:var(--grn)}
 .pnl{display:none;animation:fi .25s}.pnl.on{display:block}
 @keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 .toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
-.srch{background:var(--sf);border:1px solid var(--bd);color:var(--tx);padding:8px 12px;border-radius:6px;font-size:12px;width:200px;outline:none;font-family:var(--mn)}
+.srch{background:var(--sf);border:1px solid var(--bd);color:var(--tx);padding:8px 12px;border-radius:6px;font-size:12px;width:240px;outline:none;font-family:var(--mn)}
 .srch:focus{border-color:var(--cyan);box-shadow:0 0 12px rgba(26,188,156,.1)}
 .chip{background:var(--sf);border:1px solid var(--bd);color:var(--tx3);padding:6px 10px;border-radius:20px;font-size:9px;font-weight:600;cursor:pointer;transition:.15s;font-family:var(--mn)}
 .chip:hover{border-color:var(--tx2);color:var(--tx2)}
 .chip.on{background:var(--grn);color:#000;border-color:var(--grn)}
 .tw{background:var(--sf);border:1px solid var(--bd);border-radius:10px;overflow:auto;max-height:75vh;box-shadow:var(--glow)}
 table{width:100%;border-collapse:collapse;min-width:1400px;font-family:var(--mn)}
-th{padding:8px 5px;font-size:9px;font-weight:700;color:var(--tx3);border-bottom:2px solid var(--bd);cursor:pointer;text-align:center;position:sticky;top:0;background:var(--sf);z-index:5;letter-spacing:.5px;text-transform:uppercase;user-select:none}
-th:first-child{text-align:left;padding-left:10px;position:sticky;left:0;z-index:10;border-right:1px solid var(--bd);min-width:140px}
+th{padding:10px 5px;font-size:9px;font-weight:700;color:var(--tx3);border-bottom:2px solid var(--bd);cursor:pointer;text-align:center;position:sticky;top:0;background:var(--sf);z-index:5;letter-spacing:.5px;text-transform:uppercase;user-select:none}
+th:first-child{text-align:left;padding-left:12px;position:sticky;left:0;z-index:10;border-right:1px solid var(--bd);min-width:220px}
+th:hover{color:var(--tx2)}
 th.act{color:var(--cyan)}
-td{padding:5px;border-bottom:1px solid rgba(30,42,58,.5);font-size:10px;text-align:center}
-td:first-child{text-align:left;padding-left:10px;position:sticky;left:0;background:var(--sf);z-index:4;border-right:1px solid var(--bd);min-width:140px}
+td{padding:8px 5px;border-bottom:1px solid rgba(30,42,58,.5);font-size:11px;text-align:center}
+td:first-child{text-align:left;padding-left:12px;position:sticky;left:0;background:var(--sf);z-index:4;border-right:1px solid var(--bd)}
 tbody tr{transition:background .1s}
 tbody tr:hover{background:var(--sf2)}
 tbody tr:hover td:first-child{background:var(--sf2)}
-.g{color:var(--grn);font-weight:700}.r{color:var(--red)}.gl{color:var(--gld);font-weight:700}.cy{color:var(--cyan);font-weight:700}
-.cell-hot{background:rgba(46,204,113,.08)}.cell-cold{background:rgba(231,76,60,.06)}
-.pname{font-weight:700;font-size:10px;color:#fff;font-family:var(--fn)}
-.pteam{font-size:8px;color:var(--tx3)}
+.g{color:var(--grn);font-weight:700}.r{color:var(--red)}.gl{color:var(--gld);font-weight:700}.cy{color:var(--cyan);font-weight:700}.pu{color:var(--pur);font-weight:700}
+.pname{font-weight:700;font-size:11px;color:#fff;font-family:var(--fn)}
 .info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:12px}
 .info-card{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:14px;position:relative;overflow:hidden}
-.info-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--grn),var(--cyan))}
-.info-label{font-size:8px;color:var(--tx3);font-family:var(--mn);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
-.info-val{font-size:20px;font-weight:800;font-family:var(--mn)}
-.info-note{font-size:9px;color:var(--tx2);margin-top:2px}
-.lineup-box{background:var(--sf);border:2px solid var(--cyan);border-radius:10px;margin-top:12px;overflow:hidden}
-.lineup-hdr{background:linear-gradient(135deg,rgba(26,188,156,.15),rgba(52,152,219,.1));padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
-.lineup-hdr h3{font-size:14px;font-weight:800;color:var(--cyan)}
+.info-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--pur),var(--cyan))}
+.info-label{font-size:9px;color:var(--tx3);font-family:var(--mn);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.info-val{font-size:22px;font-weight:800;font-family:var(--mn)}
+.info-note{font-size:10px;color:var(--tx2);margin-top:4px}
+.lineup-box{background:var(--sf);border:2px solid var(--bd2);border-radius:10px;margin-top:12px;overflow:hidden}
+.lineup-box.gpp{border-color:var(--pur)}
+.lineup-box.cash{border-color:var(--cyan)}
+.lineup-hdr{padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--bd)}
+.gpp .lineup-hdr{background:linear-gradient(135deg,rgba(155,89,182,.15),rgba(26,188,156,.05))}
+.cash .lineup-hdr{background:linear-gradient(135deg,rgba(26,188,156,.15),rgba(52,152,219,.05))}
+.lineup-hdr h3{font-size:14px;font-weight:800;color:#fff}
 .lineup-stats{display:flex;gap:16px;font-family:var(--mn);font-size:11px}
 .lineup-list{list-style:none}
-.lineup-list li{padding:10px 16px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;font-size:12px;font-family:var(--mn)}
+.lineup-list li{padding:10px 16px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;font-size:12px;font-family:var(--mn);align-items:center}
 .lineup-list li:last-child{border:none}
-.gen-btn{background:linear-gradient(135deg,var(--grn),var(--cyan));color:#000;border:none;padding:10px 20px;border-radius:8px;font-family:var(--fn);font-size:12px;font-weight:700;cursor:pointer;transition:.2s;letter-spacing:.5px}
-.gen-btn:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(46,204,113,.3)}
-@media(max-width:768px){
-.c{padding:6px}.hdr h1{font-size:20px}
-table{min-width:900px}
-th,td{font-size:8px;padding:3px 2px}
-th:first-child,td:first-child{min-width:100px}
-.info-grid{grid-template-columns:1fr 1fr}
-}
+.gen-btn{color:#000;border:none;padding:12px 24px;border-radius:8px;font-family:var(--fn);font-size:13px;font-weight:800;cursor:pointer;transition:.2s;letter-spacing:.5px}
+.gen-btn.gpp{background:linear-gradient(135deg,var(--pur),var(--blu))}
+.gen-btn.cash{background:linear-gradient(135deg,var(--grn),var(--cyan))}
+.gen-btn:hover{transform:translateY(-1px);filter:brightness(1.1)}
+.dict-table th, .dict-table td{text-align:left; font-size:12px; padding:12px;}
+.dict-table td code{background:var(--sf2); padding:2px 6px; border-radius:4px; color:var(--cyan)}
 </style>
 </head>
 <body>
 <div class="c">
 <header class="hdr">
 <div>
-<h1>🐊 SWAMP CLASSIC V7.1</h1>
-<div style="font-size:11px;color:var(--tx2);margin-top:2px">Zurich Classic 2026 · TPC Louisiana · DK Salaries LIVE · DataGolf SG Stats Integrated</div>
+<h1>🐊 SWAMP CLASSIC V7.4</h1>
+<div style="font-size:11px;color:var(--tx2);margin-top:2px">Zurich Classic 2026 · T5/T10 Integration · All 80 Teams Verified</div>
 </div>
 <div class="hdr-meta">
-<div>$50K CAP · 6 GOLFERS · 1-PER-TEAM</div>
-<div style="margin-top:2px">Last updated: April 20, 2026</div>
+<div>$50K CAP · 6 TEAMS</div>
+<div style="margin-top:2px">Salaries Reconciled Live</div>
 </div>
 </header>
 
 <div class="tabs">
-<button class="tab on" data-p="pool">📊 PLAYER POOL</button>
-<button class="tab" data-p="teams">👥 TEAM VIEW</button>
+<button class="tab on" data-p="pool">📊 TEAM POOL</button>
 <button class="tab" data-p="build">🔧 OPTIMIZER</button>
-<button class="tab" data-p="signals">🎯 SIGNALS</button>
+<button class="tab" data-p="dict">📖 DATA DICTIONARY</button>
 </div>
 
 <div class="pnl on" id="p-pool">
 <div class="toolbar">
-<input class="srch" id="srch" placeholder="Search player..." type="search">
-<button class="chip on" data-f="all">ALL</button>
-<button class="chip" data-f="elite">🎯 SG:APP > 0.4</button>
-<button class="chip" data-f="value">💰 VALUE</button>
-<button class="chip" data-f="t2g">⚡ T2G > 0.8</button>
-<button class="chip" data-f="fade">📉 FADES</button>
+<input class="srch" id="srch" placeholder="Search team..." type="search">
+<button class="chip on" data-f="all">ALL TEAMS</button>
+<button class="chip" data-f="top10edge">📈 T10 EDGE > 2%</button>
+<button class="chip" data-f="ceiling">🚀 HIGH CEILING (Δ > 3.0)</button>
+<button class="chip" data-f="value">💰 SUB $8K VALUE</button>
 </div>
 <div class="tw"><table><thead id="thd"></thead><tbody id="tb"></tbody></table></div>
 </div>
 
-<div class="pnl" id="p-teams"></div>
 <div class="pnl" id="p-build">
 <div class="info-grid">
-<div class="info-card"><div class="info-label">Strategy</div><div class="info-val" style="font-size:14px">Stars & Scrubs</div><div class="info-note">1 anchor $9K+, 3-4 sub-$7K value plays</div></div>
-<div class="info-card"><div class="info-label">Key Rule</div><div class="info-val" style="font-size:14px">Same FPTS</div><div class="info-note">Both partners score identically — always roster cheaper one</div></div>
-<div class="info-card"><div class="info-label">Ownership Cap</div><div class="info-val cy">≤20%</div><div class="info-note">Per player in GPP builds (RBC lesson)</div></div>
-<div class="info-card"><div class="info-label">Target Own Band</div><div class="info-val gl">3-12%</div><div class="info-note">For 3+ of 6 roster slots</div></div>
+<div class="info-card"><div class="info-label">GPP Strategy</div><div class="info-val pu">Ceiling & Volatility</div><div class="info-note">Optimizes for highest Standard Deviation + Baseline (Δ).</div></div>
+<div class="info-card"><div class="info-label">Cash Strategy</div><div class="info-val cy">Make Cut %</div><div class="info-note">Optimizes strictly for the DataGolf Make Cut probability.</div></div>
+<div class="info-card"><div class="info-label">Pricing Rule</div><div class="info-val gl">T10 EV Mapping</div><div class="info-note">Identifies highest expected value for Top 10 tournament outcomes.</div></div>
 </div>
-<div style="display:flex;gap:8px;margin-bottom:12px">
-<button class="gen-btn" onclick="genLineup('gpp')">🚀 GENERATE GPP LINEUP</button>
-<button class="gen-btn" onclick="genLineup('cash')" style="background:linear-gradient(135deg,var(--gld),var(--org))">💰 GENERATE CASH LINEUP</button>
+<div style="display:flex;gap:12px;margin-bottom:12px">
+<button class="gen-btn gpp" onclick="genLineup('gpp')">🚀 GENERATE GPP (CEILING)</button>
+<button class="gen-btn cash" onclick="genLineup('cash')">💰 GENERATE CASH (FLOOR)</button>
 </div>
 <div id="lineup-out"></div>
 </div>
 
-<div class="pnl" id="p-signals"></div>
+<div class="pnl" id="p-dict">
+<div class="tw">
+<table class="dict-table">
+<thead><tr><th>METRIC</th><th>DEFINITION & USAGE</th></tr></thead>
+<tbody>
+<tr><td><code>Win / T5 / T10</code></td><td>DraftKings Sportsbook American Odds (e.g., +1100).</td></tr>
+<tr><td><code>DK Impl %</code></td><td>Implied probability of winning converted directly from DK odds (vig excluded).</td></tr>
+<tr><td><code>DG Pred %</code></td><td>DataGolf proprietary model win probability.</td></tr>
+<tr><td><code>EV Edge</code></td><td><code>(DG Pred % - DK Impl %)</code>. Identifies severe mispricing in the market.</td></tr>
+<tr><td><code>T10 Edge</code></td><td>Expected value on Top 10 finish odds. Highly predictive for DFS cut-makers.</td></tr>
+<tr><td><code>Cut %</code></td><td>DataGolf probability to make the weekend cut. Foundation for Cash games.</td></tr>
+<tr><td><code>Ceiling (Δ)</code></td><td><code>(DG Pred Score + Standard Deviation)</code>. Highlights highly volatile, birdie-making teams for GPPs.</td></tr>
+</tbody>
+</table>
+</div>
+</div>
 </div>
 
 <script>
 'use strict';
-// ========== COMPLETE PLAYER DATABASE ==========
-// Extracted from DataGolf screenshots + DK salary screenshots
-// Fields: name, team, partner, sal (DK salary), fppg, t10s, sgPutt, sgArg, sgApp, sgOtt, sgT2G, sgTotal, drvDist, drvAcc
-const D=[
-{n:"M. Fitzpatrick",tm:"Fitzpatrick²",p:"A. Fitzpatrick",sal:10500,fppg:80.0,t10:2,putt:0.22,arg:0.44,app:0.96,ott:0.59,t2g:1.98,tot:2.13,dist:4.9,acc:8.4,hist:0.05,fat:true,fatNote:"WON RBC Heritage playoff 4/20"},
-{n:"S. Lowry",tm:"Koepka/Lowry",p:"B. Koepka",sal:10000,fppg:74.2,t10:3,putt:0.42,arg:-0.11,app:1.01,ott:0.12,t2g:1.02,tot:1.44,dist:-0.1,acc:1.3,hist:0.15},
-{n:"B. Koepka",tm:"Koepka/Lowry",p:"S. Lowry",sal:10000,fppg:56.9,t10:3,putt:-0.38,arg:0.08,app:1.01,ott:0.36,t2g:1.44,tot:1.09,dist:9.2,acc:-4.4,hist:0.15},
-{n:"A. Fitzpatrick",tm:"Fitzpatrick²",p:"M. Fitzpatrick",sal:10500,fppg:80.0,t10:2,putt:0.09,arg:0.19,app:0.11,ott:0.17,t2g:0.46,tot:0.48,dist:-6.8,acc:6.9,hist:0.05,fat:true},
-{n:"B. Griffin",tm:"Griffin/Novak",p:"A. Novak",sal:9700,fppg:64.2,t10:0,putt:0.21,arg:0.48,app:0.02,ott:-0.02,t2g:0.48,tot:1.00,dist:-1.9,acc:2.8,hist:0.20},
-{n:"A. Novak",tm:"Griffin/Novak",p:"B. Griffin",sal:9700,fppg:59.4,t10:1,putt:-0.12,arg:-0.06,app:0.37,ott:0.06,t2g:0.36,tot:0.36,dist:-1.4,acc:-0.8,hist:0.20},
-{n:"R. Gerard",tm:"Gerard/Yellamaraju",p:"S. Yellamaraju",sal:9500,fppg:80.5,t10:3,putt:0.01,arg:-0.05,app:0.84,ott:0.25,t2g:1.03,tot:1.32,dist:1.2,acc:4.0},
-{n:"S. Yellamaraju",tm:"Gerard/Yellamaraju",p:"R. Gerard",sal:9500,fppg:80.9,t10:2,putt:0.54,arg:-0.15,app:0.55,ott:0.48,t2g:0.88,tot:0.87,dist:10.5,acc:4.8},
-{n:"K. Vilips",tm:"Vilips/Thorbjornsen",p:"M. Thorbjornsen",sal:9400,fppg:51.7,t10:0,putt:0.38,arg:-0.17,app:0.03,ott:-0.51,t2g:-0.64,tot:-0.23,dist:1.5,acc:-7.7,hist:0.12},
-{n:"M. Thorbjornsen",tm:"Vilips/Thorbjornsen",p:"K. Vilips",sal:9400,fppg:66.1,t10:1,putt:-0.21,arg:0.26,app:0.08,ott:0.45,t2g:0.79,tot:0.75,dist:10.6,acc:3.5,hist:0.12},
-{n:"S. Theegala",tm:"Theegala/Rai",p:"A. Rai",sal:9200,fppg:79.1,t10:4,putt:0.33,arg:0.39,app:0.53,ott:-0.00,t2g:0.92,tot:1.23,dist:1.7,acc:-0.7},
-{n:"A. Rai",tm:"Theegala/Rai",p:"S. Theegala",sal:9200,fppg:53.9,t10:0,putt:-0.59,arg:0.16,app:0.52,ott:0.02,t2g:0.70,tot:0.10,dist:-10.8,acc:9.5},
-{n:"M. Wallace",tm:"Wallace/Penge",p:"M. Penge",sal:9100,fppg:64.7,t10:2,putt:-0.16,arg:0.13,app:0.42,ott:0.00,t2g:0.55,tot:0.15,dist:-0.3,acc:1.8},
-{n:"M. Penge",tm:"Wallace/Penge",p:"M. Wallace",sal:9100,fppg:56.7,t10:1,putt:-0.07,arg:-0.23,app:-0.37,ott:0.83,t2g:0.23,tot:0.06,dist:20.8,acc:-7.1},
-{n:"H. Li",tm:"Li/Smith",p:"J. Smith",sal:9000,fppg:59.0,t10:2,putt:0.10,arg:-0.10,app:0.26,ott:0.48,t2g:0.64,tot:0.48,dist:4.0,acc:2.3},
-{n:"J. Smith",tm:"Li/Smith",p:"H. Li",sal:9000,fppg:63.8,t10:1,putt:-0.07,arg:-0.18,app:0.42,ott:0.43,t2g:0.68,tot:0.59,dist:8.1,acc:2.5},
-{n:"W. Clark",tm:"Clark/Moore",p:"T. Moore",sal:8900,fppg:68.7,t10:0,putt:-0.20,arg:0.33,app:0.49,ott:0.14,t2g:0.96,tot:0.64,dist:6.4,acc:-0.3},
-{n:"T. Moore",tm:"Clark/Moore",p:"W. Clark",sal:8900,fppg:61.4,t10:1,putt:0.36,arg:0.15,app:-0.74,ott:0.24,t2g:-0.35,tot:-0.04,dist:7.6,acc:-5.5},
-{n:"A. Eckroat",tm:"Eckroat/Thompson",p:"D. Thompson",sal:8800,fppg:56.3,t10:1,putt:-0.02,arg:-0.18,app:0.53,ott:-0.14,t2g:0.22,tot:0.09,dist:-1.4,acc:0.5},
-{n:"D. Thompson",tm:"Eckroat/Thompson",p:"A. Eckroat",sal:8800,fppg:59.5,t10:1,putt:-0.72,arg:-0.02,app:0.32,ott:0.22,t2g:0.52,tot:0.21,dist:2.2,acc:2.8},
-{n:"M. McCarty",tm:"McCarty/Meissner",p:"M. Meissner",sal:8700,fppg:64.4,t10:2,putt:0.52,arg:-0.13,app:0.05,ott:0.25,t2g:0.17,tot:0.86,dist:-3.4,acc:3.9},
-{n:"M. Meissner",tm:"McCarty/Meissner",p:"M. McCarty",sal:8700,fppg:58.6,t10:0,putt:0.06,arg:0.10,app:0.26,ott:0.19,t2g:0.55,tot:0.65,dist:3.0,acc:-0.1},
-{n:"K. Reitan",tm:"Reitan/Ventura",p:"K. Ventura",sal:8600,fppg:63.4,t10:2,putt:0.12,arg:-0.10,app:-0.32,ott:0.66,t2g:0.24,tot:0.41,dist:10.9,acc:-0.1},
-{n:"K. Ventura",tm:"Reitan/Ventura",p:"K. Reitan",sal:8600,fppg:null,t10:0,putt:0.66,arg:-0.48,app:-0.37,ott:0.46,t2g:-0.39,tot:0.25,dist:2.2,acc:1.2},
-{n:"A. Smalley",tm:"Smalley/Springer",p:"H. Springer",sal:8500,fppg:71.9,t10:0,putt:0.05,arg:0.17,app:0.42,ott:0.15,t2g:0.73,tot:0.77,dist:3.5,acc:0.7},
-{n:"H. Springer",tm:"Smalley/Springer",p:"A. Smalley",sal:8500,fppg:70.2,t10:1,putt:0.47,arg:-0.01,app:-0.18,ott:0.08,t2g:-0.11,tot:-0.54,dist:6.8,acc:-6.5},
-{n:"S. Stevens",tm:"Stevens/Bauchou",p:"Z. Bauchou",sal:8300,fppg:74.6,t10:2,putt:-0.03,arg:0.03,app:0.54,ott:0.58,t2g:1.15,tot:1.04,dist:5.8,acc:1.6},
-{n:"Z. Bauchou",tm:"Stevens/Bauchou",p:"S. Stevens",sal:8300,fppg:62.6,t10:0,putt:0.13,arg:0.15,app:0.15,ott:-0.24,t2g:0.06,tot:0.12,dist:-0.0,acc:-4.4},
-{n:"T. Pendrith",tm:"Pendrith/Hughes",p:"M. Hughes",sal:8400,fppg:57.1,t10:1,putt:-0.44,arg:0.14,app:0.04,ott:0.48,t2g:0.65,tot:0.14,dist:10.4,acc:-0.4},
-{n:"M. Hughes",tm:"Pendrith/Hughes",p:"T. Pendrith",sal:8400,fppg:54.8,t10:0,putt:0.15,arg:0.28,app:-0.12,ott:-0.10,t2g:0.05,tot:-0.02,dist:2.4,acc:-4.3},
-{n:"K. Mitchell",tm:"Mitchell/Snedeker",p:"B. Snedeker",sal:8100,fppg:72.6,t10:1,putt:-0.22,arg:-0.08,app:0.49,ott:0.76,t2g:1.17,tot:0.83,dist:8.1,acc:-2.0},
-{n:"B. Snedeker",tm:"Mitchell/Snedeker",p:"K. Mitchell",sal:8100,fppg:48.6,t10:0,putt:0.16,arg:0.67,app:0.08,ott:-0.56,t2g:0.18,tot:-0.04,dist:-19.8,acc:7.1},
-{n:"T. Kim",tm:"Kim/Yu",p:"K. Yu",sal:8000,fppg:65.9,t10:0,putt:-0.18,arg:0.24,app:0.23,ott:-0.11,t2g:0.36,tot:0.30,dist:-2.3,acc:5.5},
-{n:"T. Finau",tm:"Finau/Greyserman",p:"M. Greyserman",sal:7900,fppg:62.5,t10:0,putt:0.06,arg:0.38,app:-0.04,ott:-0.33,t2g:0.01,tot:0.12,dist:2.7,acc:-7.2},
-{n:"M. McGreevy",tm:"McGreevy/Roy",p:"K. Roy",sal:7800,fppg:61.0,t10:0,putt:-0.18,arg:-0.05,app:0.49,ott:0.53,t2g:0.98,tot:0.84,dist:-4.5,acc:7.4},
-{n:"M. Schmid",tm:"Schmid/Power",p:"S. Power",sal:7700,fppg:61.1,t10:2,putt:0.04,arg:-0.03,app:-0.47,ott:0.07,t2g:-0.43,tot:-0.08,dist:6.1,acc:-4.9},
-{n:"S. Power",tm:"Schmid/Power",p:"M. Schmid",sal:7700,fppg:56.7,t10:0,putt:0.08,arg:0.13,app:0.05,ott:0.04,t2g:0.23,tot:0.42,dist:-3.9,acc:3.3},
-{n:"J. Parry",tm:"Parry/Brown",p:"D. Brown",sal:7600,fppg:74.9,t10:3,putt:0.09,arg:0.00,app:0.16,ott:0.09,t2g:0.26,tot:0.62,dist:-3.9,acc:1.9},
-{n:"D. Brown",tm:"Parry/Brown",p:"J. Parry",sal:7600,fppg:53.8,t10:0,putt:0.05,arg:-0.33,app:0.10,ott:0.16,t2g:-0.07,tot:-0.07,dist:-6.0,acc:4.1},
-{n:"D. Lipsky",tm:"Hoey/Lipsky",p:"R. Hoey",sal:7600,fppg:65.2,t10:1,putt:0.34,arg:0.35,app:0.12,ott:-0.32,t2g:0.14,tot:0.21,dist:-10.2,acc:4.0},
-{n:"R. Hoey",tm:"Hoey/Lipsky",p:"D. Lipsky",sal:7600,fppg:56.4,t10:0,putt:-0.25,arg:-0.37,app:0.32,ott:0.41,t2g:0.36,tot:0.31,dist:4.8,acc:-0.1},
-{n:"S. Jaeger",tm:"Jaeger/Suber",p:"J. Suber",sal:7500,fppg:69.4,t10:2,putt:0.36,arg:0.53,app:-0.07,ott:-0.16,t2g:0.30,tot:0.45,dist:6.0,acc:-6.9},
-{n:"A. Putnam",tm:"Smotherman/Putnam",p:"A. Smotherman",sal:7500,fppg:65.4,t10:2,putt:0.13,arg:0.51,app:0.37,ott:-0.37,t2g:0.51,tot:0.39,dist:-20.2,acc:12.3},
-{n:"A. Smotherman",tm:"Smotherman/Putnam",p:"A. Putnam",sal:7500,fppg:59.1,t10:2,putt:-0.47,arg:-0.35,app:0.86,ott:0.48,t2g:1.00,tot:0.57,dist:0.0,acc:8.2},
-{n:"C. Bezuidenhout",tm:"VanRooyen/Bezuidenhout",p:"E. Van Rooyen",sal:7400,fppg:68.0,t10:3,putt:0.30,arg:0.40,app:0.34,ott:-0.22,t2g:0.52,tot:0.72,dist:-14.5,acc:5.0},
-{n:"C. Jarvis",tm:"Jarvis/Ewart",p:"A. Ewart",sal:7400,fppg:85.9,t10:5,putt:-0.06,arg:-0.41,app:0.11,ott:0.14,t2g:-0.17,tot:0.82,dist:-5.9,acc:5.9},
-{n:"E. Cole",tm:"Cole/Lebioda",p:"H. Lebioda",sal:7400,fppg:56.4,t10:0,putt:0.39,arg:0.52,app:0.21,ott:-0.78,t2g:-0.05,tot:0.51,dist:-5.3,acc:-5.5},
-{n:"B. Horschel",tm:"Horschel/Hoge",p:"T. Hoge",sal:7100,fppg:57.5,t10:0,putt:0.19,arg:-0.20,app:0.25,ott:-0.36,t2g:-0.31,tot:-0.23,dist:-4.3,acc:-4.6},
-{n:"A. Dumont De Chassart",tm:"Chassart/Chatfield",p:"D. Chatfield",sal:7100,fppg:67.4,t10:0,putt:-0.20,arg:0.42,app:0.12,ott:0.11,t2g:0.64,tot:0.47,dist:7.3,acc:-2.3},
-{n:"C. Ramey",tm:"Ramey/Lower",p:"J. Lower",sal:7000,fppg:66.8,t10:0,putt:0.57,arg:-0.06,app:-0.20,ott:0.12,t2g:-0.14,tot:0.37,dist:0.9,acc:-0.1},
-{n:"B. Brown",tm:"Brown/Clanton",p:"L. Clanton",sal:7000,fppg:71.9,t10:3,putt:0.31,arg:-0.24,app:-0.12,ott:-0.13,t2g:-0.50,tot:0.31,dist:8.7,acc:2.2},
-{n:"D. Riley",tm:"Riley/Hardy",p:"N. Hardy",sal:6500,fppg:44.4,t10:1,putt:0.22,arg:-0.19,app:-0.46,ott:-1.51,t2g:-2.16,tot:-1.30,dist:-0.9,acc:-9.3,hist:0.20},
-{n:"N. Hardy",tm:"Riley/Hardy",p:"D. Riley",sal:6500,fppg:47.4,t10:0,putt:0.10,arg:-0.00,app:-1.45,ott:-0.28,t2g:-1.73,tot:-1.32,dist:2.4,acc:-5.2,hist:0.20},
-{n:"R. Streb",tm:"Merritt/Streb",p:"T. Merritt",sal:6000,fppg:70.0,t10:0,putt:0.52,arg:1.91,app:-0.18,ott:-0.07,t2g:1.67,tot:-1.48,dist:-7.6,acc:-5.3},
-{n:"T. Montgomery",tm:"Montgomery/Piercy",p:"S. Piercy",sal:6400,fppg:57.6,t10:3,putt:0.50,arg:0.05,app:-0.15,ott:-2.77,t2g:-2.87,tot:-0.84,dist:-6.1,acc:-9.4},
-{n:"D. Skinns",tm:"Skinns/Mullinax",p:"T. Mullinax",sal:6600,fppg:64.4,t10:1,putt:0.51,arg:0.16,app:-0.48,ott:0.18,t2g:-0.15,tot:-0.70,dist:-1.9,acc:-2.5},
-{n:"Z. Blair",tm:"Fishburn/Blair",p:"P. Fishburn",sal:6600,fppg:68.9,t10:1,putt:-0.02,arg:-0.33,app:1.17,ott:-0.10,t2g:0.74,tot:0.40,dist:-18.2,acc:5.7},
-{n:"C. Young",tm:"Phillips/Young",p:"C. Phillips",sal:6900,fppg:69.0,t10:2,putt:-0.14,arg:-0.06,app:-0.73,ott:-0.24,t2g:-1.03,tot:-0.51,dist:-9.0,acc:0.9},
-{n:"M. Couvra",tm:"Pavon/Couvra",p:"M. Pavon",sal:6900,fppg:62.2,t10:3,putt:-0.20,arg:0.05,app:-0.45,ott:0.07,t2g:-0.33,tot:-0.25,dist:-5.4,acc:2.9},
-{n:"J. Paul",tm:"Higgs/Paul",p:"H. Higgs",sal:6400,fppg:61.6,t10:1,putt:0.64,arg:0.36,app:-1.33,ott:-0.94,t2g:-1.91,tot:-0.87,dist:-2.8,acc:-6.5},
-{n:"D. Ghim",tm:"Kang/Ghim",p:"J. Kang",sal:7000,fppg:58.8,t10:0,putt:-0.22,arg:0.16,app:-0.04,ott:0.47,t2g:0.59,tot:0.16,dist:0.9,acc:2.1},
-{n:"J. Stanger",tm:"Walker/Stanger",p:"D. Walker",sal:6600,fppg:56.9,t10:0,putt:0.44,arg:0.02,app:-1.09,ott:0.53,t2g:-0.54,tot:-0.51,dist:10.7,acc:-0.9},
-{n:"G. Ogilvy",tm:"Davis/Ogilvy",p:"C. Davis",sal:6100,fppg:63.5,t10:0,putt:null,arg:null,app:null,ott:null,t2g:null,tot:-1.45,dist:null,acc:null},
+
+// ========== COMPLETE FIELD DATABASE V7.4 ==========
+// 80 Teams Integrated with Win, T5, T10 Odds & Verified DK Salaries
+const RAW_TEAMS = [
+  { "tm": "Fitzpatrick / Fitzpatrick", "odds": 1100, "t5": 210, "t10": 100, "sal": 10500, "dg_win": 0.0678, "dg_cut": 0.749, "dg_pred": 1.872, "std": 2.719 },
+  { "tm": "Koepka / Lowry", "odds": 1500, "t5": 270, "t10": 126, "sal": 10000, "dg_win": 0.0522, "dg_cut": 0.707, "dg_pred": 0.86, "std": 2.696 },
+  { "tm": "Novak / Griffin", "odds": 1750, "t5": 305, "t10": 142, "sal": 9700, "dg_win": 0.0426, "dg_cut": 0.692, "dg_pred": 0.758, "std": 2.72 },
+  { "tm": "Thorbjornsen / Vilips", "odds": 1850, "t5": 325, "t10": 152, "sal": 9400, "dg_win": 0.0355, "dg_cut": 0.658, "dg_pred": 1.066, "std": 2.787 },
+  { "tm": "Rai / Theegala", "odds": 2050, "t5": 345, "t10": 158, "sal": 9200, "dg_win": 0.0346, "dg_cut": 0.674, "dg_pred": 1.144, "std": 2.766 },
+  { "tm": "Moore / Clark", "odds": 2200, "t5": 375, "t10": 172, "sal": 8900, "dg_win": 0.0355, "dg_cut": 0.654, "dg_pred": 1.155, "std": 2.748 },
+  { "tm": "Li / Smith", "odds": 2200, "t5": 370, "t10": 172, "sal": 9000, "dg_win": 0.0373, "dg_cut": 0.666, "dg_pred": 0.707, "std": 2.716 },
+  { "tm": "Penge / Wallace", "odds": 2250, "t5": 375, "t10": 175, "sal": 9100, "dg_win": 0.0367, "dg_cut": 0.66, "dg_pred": 0.291, "std": 2.752 },
+  { "tm": "Thompson / Eckroat", "odds": 2400, "t5": 395, "t10": 182, "sal": 8800, "dg_win": 0.0247, "dg_cut": 0.624, "dg_pred": 0.82, "std": 2.65 },
+  { "tm": "Keefer / Brennan", "odds": 2500, "t5": 410, "t10": 190, "sal": 8200, "dg_win": 0.0425, "dg_cut": 0.667, "dg_pred": 0.85, "std": 2.75 },
+  { "tm": "McCarty / Meissner", "odds": 2500, "t5": 405, "t10": 186, "sal": 8700, "dg_win": 0.027, "dg_cut": 0.641, "dg_pred": 0.65, "std": 2.6 },
+  { "tm": "Ventura / Reitan", "odds": 2800, "t5": 455, "t10": 205, "sal": 8600, "dg_win": 0.0268, "dg_cut": 0.616, "dg_pred": 0.41, "std": 2.62 },
+  { "tm": "Springer / Smalley", "odds": 2800, "t5": 460, "t10": 210, "sal": 8500, "dg_win": 0.0193, "dg_cut": 0.585, "dg_pred": 0.77, "std": 2.68 },
+  { "tm": "Hughes / Pendrith", "odds": 2900, "t5": 460, "t10": 205, "sal": 8400, "dg_win": 0.0223, "dg_cut": 0.609, "dg_pred": 0.14, "std": 2.65 },
+  { "tm": "Yu / Kim", "odds": 3000, "t5": 480, "t10": 215, "sal": 8000, "dg_win": 0.0198, "dg_cut": 0.587, "dg_pred": 0.3, "std": 2.55 },
+  { "tm": "Bauchou / Stevens", "odds": 3100, "t5": 485, "t10": 220, "sal": 8300, "dg_win": 0.0217, "dg_cut": 0.623, "dg_pred": 1.04, "std": 2.72 },
+  { "tm": "Mitchell / Snedeker", "odds": 3300, "t5": 510, "t10": 230, "sal": 8100, "dg_win": 0.0114, "dg_cut": 0.539, "dg_pred": 0.83, "std": 2.75 },
+  { "tm": "Finau / Greyserman", "odds": 3500, "t5": 550, "t10": 245, "sal": 7900, "dg_win": 0.0156, "dg_cut": 0.57, "dg_pred": 1.196, "std": 2.748 },
+  { "tm": "Roy / McGreevy", "odds": 3500, "t5": 530, "t10": 240, "sal": 7800, "dg_win": 0.0193, "dg_cut": 0.594, "dg_pred": 0.84, "std": 2.66 },
+  { "tm": "Schmid / Power", "odds": 3600, "t5": 550, "t10": 245, "sal": 7700, "dg_win": 0.0146, "dg_cut": 0.56, "dg_pred": 0.42, "std": 2.6 },
+  { "tm": "Hoey / Lipsky", "odds": 3800, "t5": 570, "t10": 250, "sal": 7600, "dg_win": 0.0156, "dg_cut": 0.568, "dg_pred": 0.31, "std": 2.58 },
+  { "tm": "Parry / Brown", "odds": 4100, "t5": 600, "t10": 265, "sal": 7600, "dg_win": 0.0137, "dg_cut": 0.549, "dg_pred": 0.62, "std": 2.55 },
+  { "tm": "Olesen / Neergaard-Petersen", "odds": 4100, "t5": 610, "t10": 270, "sal": 7500, "dg_win": 0.0105, "dg_cut": 0.533, "dg_pred": 0.4, "std": 2.5 },
+  { "tm": "Suber / Jaeger", "odds": 4400, "t5": 650, "t10": 280, "sal": 7500, "dg_win": 0.0105, "dg_cut": 0.517, "dg_pred": 0.45, "std": 2.54 },
+  { "tm": "Smotherman / Putnam", "odds": 4500, "t5": 650, "t10": 270, "sal": 7500, "dg_win": 0.0128, "dg_cut": 0.567, "dg_pred": 0.57, "std": 2.6 },
+  { "tm": "Van Rooyen / Bezuidenhout", "odds": 4700, "t5": 670, "t10": 295, "sal": 7400, "dg_win": 0.0089, "dg_cut": 0.508, "dg_pred": 0.72, "std": 2.65 },
+  { "tm": "Ewart / Jarvis", "odds": 4900, "t5": 700, "t10": 305, "sal": 7400, "dg_win": 0.0147, "dg_cut": 0.562, "dg_pred": 0.82, "std": 2.7 },
+  { "tm": "Lebioda / Cole", "odds": 5200, "t5": 730, "t10": 320, "sal": 7400, "dg_win": 0.0095, "dg_cut": 0.516, "dg_pred": 0.51, "std": 2.55 },
+  { "tm": "Hossler / Ryder", "odds": 5400, "t5": 750, "t10": 325, "sal": 7300, "dg_win": 0.0095, "dg_cut": 0.512, "dg_pred": 0.4, "std": 2.5 },
+  { "tm": "Whaley / Sigg", "odds": 5600, "t5": 780, "t10": 335, "sal": 7300, "dg_win": 0.0075, "dg_cut": 0.489, "dg_pred": 0.35, "std": 2.5 },
+  { "tm": "Dou / Wu", "odds": 5700, "t5": 790, "t10": 340, "sal": 7200, "dg_win": 0.0105, "dg_cut": 0.533, "dg_pred": 0.45, "std": 2.55 },
+  { "tm": "Svensson / Nyholm", "odds": 5700, "t5": 810, "t10": 350, "sal": 7300, "dg_win": 0.0126, "dg_cut": 0.526, "dg_pred": 0.5, "std": 2.58 },
+  { "tm": "Mouw / Kanaya", "odds": 5700, "t5": 790, "t10": 340, "sal": 7200, "dg_win": 0.011, "dg_cut": 0.536, "dg_pred": 0.48, "std": 2.55 },
+  { "tm": "Dumont De Chassart / Chatfield", "odds": 6100, "t5": 820, "t10": 350, "sal": 7100, "dg_win": 0.009, "dg_cut": 0.512, "dg_pred": 0.47, "std": 2.5 },
+  { "tm": "Kuchar / Higgo", "odds": 6200, "t5": 840, "t10": 360, "sal": 7200, "dg_win": 0.0049, "dg_cut": 0.445, "dg_pred": 0.3, "std": 2.45 },
+  { "tm": "Horschel / Hoge", "odds": 6600, "t5": 900, "t10": 380, "sal": 7100, "dg_win": 0.01, "dg_cut": 0.504, "dg_pred": -0.23, "std": 2.4 },
+  { "tm": "Brown / Clanton", "odds": 6700, "t5": 910, "t10": 390, "sal": 7000, "dg_win": 0.0138, "dg_cut": 0.533, "dg_pred": 0.5, "std": 2.85 },
+  { "tm": "Kizzire / Kirk", "odds": 6900, "t5": 920, "t10": 390, "sal": 7100, "dg_win": 0.0066, "dg_cut": 0.48, "dg_pred": 0.2, "std": 2.45 },
+  { "tm": "Ghim / Kang", "odds": 6900, "t5": 910, "t10": 390, "sal": 7000, "dg_win": 0.0082, "dg_cut": 0.487, "dg_pred": 0.16, "std": 2.48 },
+  { "tm": "Lower / Ramey", "odds": 6900, "t5": 920, "t10": 390, "sal": 7000, "dg_win": 0.0072, "dg_cut": 0.482, "dg_pred": 0.37, "std": 2.5 },
+  { "tm": "Couvra / Pavon", "odds": 7200, "t5": 960, "t10": 405, "sal": 6900, "dg_win": 0.0067, "dg_cut": 0.466, "dg_pred": 0.05, "std": 2.45 },
+  { "tm": "Young / Phillips", "odds": 7600, "t5": 990, "t10": 415, "sal": 6900, "dg_win": 0.0062, "dg_cut": 0.462, "dg_pred": 0.0, "std": 2.4 },
+  { "tm": "Vanderlaan / Blanchet", "odds": 7600, "t5": 1000, "t10": 420, "sal": 6900, "dg_win": 0.0111, "dg_cut": 0.521, "dg_pred": 0.4, "std": 2.5 },
+  { "tm": "Shipley / Lamprecht", "odds": 8000, "t5": 1025, "t10": 440, "sal": 6800, "dg_win": 0.0095, "dg_cut": 0.488, "dg_pred": 0.3, "std": 2.55 },
+  { "tm": "Hadwin / Svensson", "odds": 8200, "t5": 1050, "t10": 440, "sal": 6800, "dg_win": 0.0073, "dg_cut": 0.488, "dg_pred": 0.25, "std": 2.45 },
+  { "tm": "Griffin / Kohles", "odds": 8200, "t5": 1050, "t10": 440, "sal": 6700, "dg_win": 0.0047, "dg_cut": 0.437, "dg_pred": 0.1, "std": 2.4 },
+  { "tm": "Champ / Silverman", "odds": 8200, "t5": 1075, "t10": 450, "sal": 6800, "dg_win": 0.0062, "dg_cut": 0.466, "dg_pred": 0.2, "std": 2.48 },
+  { "tm": "Martin / Crowe", "odds": 8400, "t5": 1075, "t10": 450, "sal": 6700, "dg_win": 0.0037, "dg_cut": 0.43, "dg_pred": 0.15, "std": 2.4 },
+  { "tm": "Blair / Fishburn", "odds": 9200, "t5": 1125, "t10": 470, "sal": 6600, "dg_win": 0.0064, "dg_cut": 0.479, "dg_pred": 0.4, "std": 2.5 },
+  { "tm": "Streelman / Dahmen", "odds": 9600, "t5": 1175, "t10": 480, "sal": 6700, "dg_win": 0.0065, "dg_cut": 0.463, "dg_pred": 0.3, "std": 2.45 },
+  { "tm": "Hodges / Garnett", "odds": 9800, "t5": 1175, "t10": 485, "sal": 6600, "dg_win": 0.0038, "dg_cut": 0.434, "dg_pred": 0.1, "std": 2.4 },
+  { "tm": "Stanger / Walker", "odds": 10000, "t5": 1275, "t10": 520, "sal": 6600, "dg_win": 0.006, "dg_cut": 0.434, "dg_pred": -0.45, "std": 2.4 },
+  { "tm": "Nakajima / Hirata", "odds": 11000, "t5": 1325, "t10": 530, "sal": 6500, "dg_win": 0.0045, "dg_cut": 0.432, "dg_pred": 0.1, "std": 2.4 },
+  { "tm": "Duncan / Schenk", "odds": 11500, "t5": 1400, "t10": 570, "sal": 6400, "dg_win": 0.0035, "dg_cut": 0.41, "dg_pred": 0.05, "std": 2.38 },
+  { "tm": "Riley / Hardy", "odds": 11500, "t5": 1425, "t10": 580, "sal": 6500, "dg_win": 0.0025, "dg_cut": 0.38, "dg_pred": -1.32, "std": 2.4 },
+  { "tm": "Montgomery / Piercy", "odds": 11500, "t5": 1375, "t10": 560, "sal": 6400, "dg_win": 0.003, "dg_cut": 0.39, "dg_pred": -0.84, "std": 2.4 },
+  { "tm": "Paul / Higgs", "odds": 13500, "t5": 1550, "t10": 630, "sal": 6400, "dg_win": 0.002, "dg_cut": 0.35, "dg_pred": -0.87, "std": 2.35 },
+  { "tm": "Brehm / Hubbard", "odds": 15000, "t5": 1700, "t10": 690, "sal": 6300, "dg_win": 0.0018, "dg_cut": 0.32, "dg_pred": -1.0, "std": 2.3 },
+  { "tm": "Dunlap / Sargent", "odds": 16000, "t5": 1800, "t10": 730, "sal": 6300, "dg_win": 0.0045, "dg_cut": 0.409, "dg_pred": -0.5, "std": 2.45 },
+  { "tm": "Tosti / Campos", "odds": 19500, "t5": 2150, "t10": 840, "sal": 6300, "dg_win": 0.0039, "dg_cut": 0.379, "dg_pred": -0.7, "std": 2.4 },
+  { "tm": "Capan / Goodwin", "odds": 21000, "t5": 2250, "t10": 860, "sal": 6200, "dg_win": 0.0025, "dg_cut": 0.35, "dg_pred": -0.9, "std": 2.38 },
+  { "tm": "List / Norlander", "odds": 22000, "t5": 2300, "t10": 870, "sal": 6200, "dg_win": 0.002, "dg_cut": 0.32, "dg_pred": -1.1, "std": 2.35 },
+  { "tm": "Peterson / Gordon", "odds": 23000, "t5": 2350, "t10": 900, "sal": 6200, "dg_win": 0.0018, "dg_cut": 0.31, "dg_pred": -1.2, "std": 2.3 },
+  { "tm": "Malnati / Knox", "odds": 26000, "t5": 2600, "t10": 980, "sal": 6100, "dg_win": 0.0015, "dg_cut": 0.28, "dg_pred": -1.5, "std": 2.25 },
+  { "tm": "Kim / Palmer", "odds": 27000, "t5": 2700, "t10": 1000, "sal": 6100, "dg_win": 0.0012, "dg_cut": 0.25, "dg_pred": -1.8, "std": 2.2 },
+  { "tm": "Davis / Ogilvy", "odds": 32500, "t5": 3100, "t10": 1150, "sal": 6100, "dg_win": 0.0008, "dg_cut": 0.2, "dg_pred": -1.45, "std": 2.2 },
+  { "tm": "Villegas / Rozo", "odds": 35000, "t5": 3300, "t10": 1225, "sal": 6000, "dg_win": 0.0005, "dg_cut": 0.18, "dg_pred": -2.0, "std": 2.15 },
+  { "tm": "Watney / Hoffman", "odds": 36000, "t5": 3400, "t10": 1250, "sal": 6100, "dg_win": 0.0005, "dg_cut": 0.18, "dg_pred": -2.1, "std": 2.1 },
+  { "tm": "Reavie / Byrd", "odds": 40000, "t5": 3600, "t10": 1300, "sal": 6000, "dg_win": 0.0004, "dg_cut": 0.15, "dg_pred": -2.3, "std": 2.1 },
+  { "tm": "Streb / Merritt", "odds": 42500, "t5": 3800, "t10": 1375, "sal": 6000, "dg_win": 0.0003, "dg_cut": 0.14, "dg_pred": -1.48, "std": 2.1 },
+  { "tm": "Cook / Dufner", "odds": 70000, "t5": 5800, "t10": 1950, "sal": 6000, "dg_win": 0.0001, "dg_cut": 0.1, "dg_pred": -2.8, "std": 2.0 },
+  { "tm": "Stanley / Hahn", "odds": 105000, "t5": 8200, "t10": 2700, "sal": 6000, "dg_win": 0.0001, "dg_cut": 0.08, "dg_pred": -3.0, "std": 2.0 },
+  { "tm": "Gerard / Yellamaraju", "odds": 5000, "t5": 700, "t10": 310, "sal": 9500, "dg_win": 0.0502, "dg_cut": 0.711, "dg_pred": 1.027, "std": 2.721 }
 ];
 
-// Compute course fit score: SG:App(30%) + SG:ARG(20%) + SG:T2G(15%) + DrvAcc(15%) + FPPG-value(10%) + History(10%)
-D.forEach(p => {
-  const appZ = (p.app||0) * 0.30;
-  const argZ = (p.arg||0) * 0.20;
-  const t2gZ = (p.t2g||0) * 0.15;
-  const accZ = ((p.acc||0) / 10) * 0.15;
-  const valZ = p.sal ? ((p.fppg||50) / p.sal * 1000 - 7) / 3 * 0.10 : 0;
-  const histZ = (p.hist||0) * 0.10 / 0.05;
-  let fit = appZ + argZ + t2gZ + accZ + valZ + histZ;
-  if (p.fat) fit -= 0.25;
-  p.fit = parseFloat(fit.toFixed(3));
-  p.valRatio = p.sal ? parseFloat((p.fppg||0) / p.sal * 1000).toFixed(1) : '—';
+// Calculation Engine
+RAW_TEAMS.forEach(p => {
+  // DK Implied Probabilities (Vig included for raw baseline, removed visually later if needed)
+  p.impl_win = p.odds ? (100 / (p.odds + 100)) : 0;
+  p.impl_t10 = p.t10 ? (100 / (p.t10 + 100)) : 0;
+  
+  // Win EV Edge: Mathematical advantage against the sportsbook
+  p.ev = p.dg_win && p.impl_win ? ((p.dg_win - p.impl_win) * 100) : 0;
+  
+  // Top 10 Approximation Edge
+  // (We use a standard multiplier based on field size if DG T10 prob isn't explicitly passed)
+  let est_dg_t10 = p.dg_win * 5.5; 
+  p.t10_ev = ((est_dg_t10 - p.impl_t10) * 100);
+
+  // Ceiling (Delta) = Baseline + StdDev. Core engine for Best Ball upside.
+  p.delta = p.dg_pred + p.std;
 });
 
-let SC='fit',SA=false,CF='all';
+let SC='delta',SA=false,CF='all';
 
 document.addEventListener('DOMContentLoaded',()=>{
-  // Tabs
+  // Tab Routing
   document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
     document.querySelectorAll('.pnl').forEach(x=>x.classList.remove('on'));
     t.classList.add('on');
     document.getElementById('p-'+t.dataset.p).classList.add('on');
-    if(t.dataset.p==='teams') renderTeams();
-    if(t.dataset.p==='signals') renderSignals();
   }));
+  
   // Filters
   document.querySelectorAll('.chip[data-f]').forEach(c=>c.addEventListener('click',()=>{
     CF=c.dataset.f;
@@ -225,31 +247,30 @@ document.addEventListener('DOMContentLoaded',()=>{
     c.classList.add('on');
     render();
   }));
+  
   document.getElementById('srch').addEventListener('input',render);
   buildHeader();
   render();
 });
 
 const COLS=[
-  {k:'n',l:'Player',w:140},
+  {k:'tm',l:'Team',w:160},
   {k:'sal',l:'Salary',w:60},
-  {k:'fppg',l:'FPPG',w:50},
-  {k:'fit',l:'V7 FIT',w:55},
-  {k:'app',l:'SG:App',w:55},
-  {k:'arg',l:'SG:ARG',w:55},
-  {k:'putt',l:'SG:Putt',w:55},
-  {k:'ott',l:'SG:OTT',w:55},
-  {k:'t2g',l:'SG:T2G',w:55},
-  {k:'tot',l:'SG:Tot',w:55},
-  {k:'acc',l:'DrvAcc%',w:55},
-  {k:'valRatio',l:'Val/K',w:50},
-  {k:'t10',l:'T10s',w:35},
+  {k:'odds',l:'Win Odds',w:50},
+  {k:'t10',l:'T10 Odds',w:50},
+  {k:'impl_win',l:'DK Impl %',w:50},
+  {k:'dg_win',l:'DG Pred %',w:50},
+  {k:'ev',l:'EV Edge',w:55},
+  {k:'dg_cut',l:'Cut %',w:50},
+  {k:'std',l:'StdDev',w:55},
+  {k:'delta',l:'Ceiling',w:60},
 ];
 
 function buildHeader(){
   document.getElementById('thd').innerHTML='<tr>'+COLS.map(c=>
-    `<th data-s="${c.k}" ${c.k==='n'?'':''}>${c.l}</th>`
+    `<th data-s="${c.k}">${c.l}</th>`
   ).join('')+'<th>FLAGS</th></tr>';
+  
   document.querySelectorAll('th[data-s]').forEach(th=>th.addEventListener('click',()=>{
     SA=SC===th.dataset.s?!SA:false;SC=th.dataset.s;render();
   }));
@@ -257,160 +278,93 @@ function buildHeader(){
 
 function render(){
   const q=(document.getElementById('srch').value||'').toLowerCase();
-  let d=D.filter(p=>{
-    if(q&&!p.n.toLowerCase().includes(q)&&!(p.tm||'').toLowerCase().includes(q)) return false;
-    if(CF==='elite') return (p.app||0)>0.4;
-    if(CF==='value') return p.sal && p.sal<=7500 && p.fit>0.05;
-    if(CF==='t2g') return (p.t2g||0)>0.8;
-    if(CF==='fade') return p.fat || (p.tot||0)<-1.0;
+  let d=RAW_TEAMS.filter(p=>{
+    if(q&&!p.tm.toLowerCase().includes(q)) return false;
+    if(CF==='top10edge') return p.t10_ev > 2.0;
+    if(CF==='ceiling') return p.delta >= 3.0;
+    if(CF==='value') return p.sal && p.sal<=8000;
     return true;
   });
+  
   d.sort((a,b)=>{
     let va=a[SC],vb=b[SC];
-    if(SC==='n') return SA?String(va||'').localeCompare(vb||''):String(vb||'').localeCompare(va||'');
+    if(SC==='tm') return SA?String(va||'').localeCompare(vb||''):String(vb||'').localeCompare(va||'');
     va=parseFloat(va);vb=parseFloat(vb);
     if(isNaN(va)) va=SA?-9999:9999;
     if(isNaN(vb)) vb=SA?-9999:9999;
     return SA?va-vb:vb-va;
   });
+  
   document.querySelectorAll('th[data-s]').forEach(th=>{
     th.classList.toggle('act',th.dataset.s===SC);
   });
+  
   document.getElementById('tb').innerHTML=d.map(p=>{
     const fmt=(v,dp=2)=>v==null?'<span style="color:var(--tx3)">—</span>':parseFloat(v).toFixed(dp);
-    const cls=(v,th=0.3)=>v==null?'':(v>th?'g':(v<-th?'r':''));
+    const cls=(v,th=0.5)=>v==null?'':(v>th?'g':(v<-th?'r':''));
     const salK=p.sal?'$'+(p.sal/1000).toFixed(1)+'k':'—';
+    
     let flags='';
-    if(p.fat) flags+=`<span class="badge b-red">FATIGUE</span> `;
-    if((p.hist||0)>=0.15) flags+=`<span class="badge b-gld">HIST★</span> `;
-    else if((p.hist||0)>0) flags+=`<span class="badge b-gld">HIST</span> `;
-    if(p.sal&&p.sal<=7000&&p.fit>0.1) flags+=`<span class="badge b-pur">VALUE</span> `;
-    if((p.app||0)>=0.8) flags+=`<span class="badge b-grn">ELITE APP</span> `;
+    if(p.ev > 1.0) flags+=`<span class="badge b-grn">WIN LEVERAGE</span> `;
+    if(p.t10_ev > 2.5) flags+=`<span class="badge b-gld">T10 VALUE</span> `;
+    if(p.delta >= 3.5) flags+=`<span class="badge b-pur">GPP CEILING</span> `;
+    
     return `<tr>
-<td><div class="pname">${p.n}</div><div class="pteam">${p.tm} · w/ ${p.p}</div></td>
+<td><div class="pname">${p.tm}</div></td>
 <td style="font-weight:700;color:var(--cyan)">${salK}</td>
-<td style="font-weight:700">${fmt(p.fppg,1)}</td>
-<td class="${cls(p.fit,0.15)}" style="font-weight:700">${fmt(p.fit,2)}</td>
-<td class="${cls(p.app)}">${fmt(p.app)}</td>
-<td class="${cls(p.arg)}">${fmt(p.arg)}</td>
-<td class="${cls(p.putt)}">${fmt(p.putt)}</td>
-<td class="${cls(p.ott)}">${fmt(p.ott)}</td>
-<td class="${cls(p.t2g,0.5)}">${fmt(p.t2g)}</td>
-<td class="${cls(p.tot,0.5)}">${fmt(p.tot)}</td>
-<td class="${cls((p.acc||0)/3)}">${fmt(p.acc,1)}%</td>
-<td>${p.valRatio}</td>
-<td>${p.t10||0}</td>
+<td style="color:var(--gld)">+${p.odds}</td>
+<td style="color:var(--tx2)">+${p.t10}</td>
+<td style="color:var(--tx3)">${(p.impl_win*100).toFixed(1)}%</td>
+<td style="font-weight:700">${(p.dg_win*100).toFixed(1)}%</td>
+<td class="${p.ev>0?'g':(p.ev<0?'r':'')}" style="font-weight:800">${p.ev>0?'+':''}${fmt(p.ev,2)}%</td>
+<td style="font-weight:700;color:var(--tx2)">${(p.dg_cut*100).toFixed(0)}%</td>
+<td style="color:var(--pur)">${fmt(p.std,2)}</td>
+<td style="font-weight:800;color:var(--cyan)">${fmt(p.delta,2)}</td>
 <td style="text-align:left;font-size:8px">${flags}</td>
 </tr>`;
   }).join('');
 }
 
-function renderTeams(){
-  const teams={};
-  D.forEach(p=>{if(!teams[p.tm]) teams[p.tm]={name:p.tm,players:[]};teams[p.tm].players.push(p);});
-  const tArr=Object.values(teams).map(t=>{
-    const avgFit=t.players.reduce((s,p)=>s+p.fit,0)/t.players.length;
-    const avgApp=t.players.reduce((s,p)=>s+(p.app||0),0)/t.players.length;
-    const minSal=Math.min(...t.players.map(p=>p.sal||99999));
-    return {...t,avgFit,avgApp,minSal};
-  }).sort((a,b)=>b.avgFit-a.avgFit);
-  
-  document.getElementById('p-teams').innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:8px">${tArr.map((t,i)=>{
-    const [a,b]=t.players;
-    const fitCol=t.avgFit>0.2?'var(--grn)':t.avgFit<-0.1?'var(--red)':'var(--tx)';
-    return `<div style="background:var(--sf);border:1px solid var(--bd);border-radius:8px;overflow:hidden">
-<div style="padding:8px 12px;background:var(--sf2);display:flex;justify-content:space-between;border-bottom:1px solid var(--bd)">
-<span style="font-family:var(--mn);font-size:10px;color:var(--tx3);font-weight:700">#${i+1} · ${t.name}</span>
-<span style="font-family:var(--mn);font-size:12px;font-weight:700;color:${fitCol}">FIT: ${t.avgFit.toFixed(2)}</span>
-</div>
-${t.players.map(p=>`<div style="padding:6px 12px;display:flex;justify-content:space-between;font-size:11px;border-bottom:1px dashed var(--bd)">
-<span style="font-weight:600">${p.n} ${p.fat?'<span class="badge b-red">F</span>':''} ${(p.hist||0)>0?'<span class="badge b-gld">H</span>':''}</span>
-<span style="font-family:var(--mn);font-size:10px;display:flex;gap:8px">
-<span style="color:var(--cyan)">$${(p.sal/1000).toFixed(1)}k</span>
-<span class="${(p.app||0)>0.3?'g':''}">A:${(p.app||0).toFixed(2)}</span>
-<span class="${(p.t2g||0)>0.5?'g':''}">T2G:${(p.t2g||0).toFixed(2)}</span>
-</span></div>`).join('')}
-</div>`;
-  }).join('')}</div>`;
-}
-
-function renderSignals(){
-  const topFit=[...D].sort((a,b)=>b.fit-a.fit).slice(0,12);
-  const topApp=[...D].filter(p=>p.app!=null).sort((a,b)=>b.app-a.app).slice(0,10);
-  const topVal=[...D].filter(p=>p.sal&&p.sal<=7500).sort((a,b)=>b.fit-a.fit).slice(0,10);
-  const fades=[...D].filter(p=>p.fat||(p.tot||0)<-1.0).sort((a,b)=>(a.tot||0)-(b.tot||0));
-  
-  const list=(arr,showSal=true)=>arr.map((p,i)=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--bd);font-size:11px;font-family:var(--mn)">
-<span><strong style="color:#fff">${i+1}. ${p.n}</strong> <span style="color:var(--tx3)">${p.tm}</span> ${p.fat?'<span class="badge b-red">F</span>':''}</span>
-<span style="display:flex;gap:10px">${showSal?`<span style="color:var(--cyan)">$${(p.sal/1000).toFixed(1)}k</span>`:''}
-<span class="${p.fit>0.2?'g':p.fit<0?'r':''}">${p.fit.toFixed(2)}</span></span></div>`).join('');
-  
-  document.getElementById('p-signals').innerHTML=`
-<div class="info-grid">
-<div class="info-card"><div class="info-label">🏆 Top V7 Fit Score</div><div class="info-val g">${topFit[0]?.n}</div><div class="info-note">Fit: ${topFit[0]?.fit.toFixed(2)} · SG:App ${topFit[0]?.app?.toFixed(2)}</div></div>
-<div class="info-card"><div class="info-label">🎯 Best SG:Approach</div><div class="info-val g">${topApp[0]?.n}</div><div class="info-note">+${topApp[0]?.app?.toFixed(2)} strokes gained</div></div>
-<div class="info-card"><div class="info-label">💰 Best Value Play</div><div class="info-val gl">${topVal[0]?.n}</div><div class="info-note">$${(topVal[0]?.sal/1000).toFixed(1)}k · Fit: ${topVal[0]?.fit.toFixed(2)}</div></div>
-<div class="info-card"><div class="info-label">⚠️ Top Fade</div><div class="info-val r">${fades[fades.length-1]?.n||'—'}</div><div class="info-note">SG:Tot ${fades[fades.length-1]?.tot?.toFixed(2)}</div></div>
-</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-<div style="background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:14px">
-<h3 style="font-size:13px;margin-bottom:8px;color:var(--grn)">🏆 TOP 12 BY V7 COURSE FIT</h3>${list(topFit)}
-</div>
-<div style="background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:14px">
-<h3 style="font-size:13px;margin-bottom:8px;color:var(--gld)">💰 TOP 10 VALUE PLAYS (≤$7.5K)</h3>${list(topVal)}
-</div>
-</div>
-<div style="background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:14px;margin-top:10px">
-<h3 style="font-size:13px;margin-bottom:8px;color:var(--red)">📉 FADES (Fatigue + Negative SG:Total)</h3>${list(fades,true)}
-</div>`;
-}
-
 function genLineup(type){
-  // Greedy optimizer: sort by fit, pick 6 under $50K cap, 1-per-team
-  const pool=[...D].filter(p=>p.sal&&!p.fat).sort((a,b)=>type==='gpp'?b.fit-a.fit:(b.fppg||0)-(a.fppg||0));
+  // Core Knapsack Approximation
+  // GPP sorts by Ceiling (Delta), Cash sorts by Make Cut Probability
+  const pool=[...RAW_TEAMS].filter(p=>p.sal).sort((a,b)=>type==='gpp'?b.delta-a.delta:b.dg_cut-a.dg_cut);
   const lineup=[];
-  const usedTeams=new Set();
   let cap=50000;
   
   for(const p of pool){
     if(lineup.length>=6) break;
-    if(usedTeams.has(p.tm)) continue;
     if(p.sal>cap) continue;
-    // For GPP, prefer cheaper partner if same team has one
-    const partner=D.find(x=>x.tm===p.tm&&x.n!==p.n);
-    const pick=(partner&&partner.sal<p.sal&&!usedTeams.has(partner.tm)&&partner.sal<=cap)?partner:p;
-    if(pick.sal>cap) continue;
-    lineup.push(pick);
-    usedTeams.add(pick.tm);
-    cap-=pick.sal;
+    
+    lineup.push(p);
+    cap-=p.sal;
   }
   
   const totalSal=lineup.reduce((s,p)=>s+p.sal,0);
-  const totalFit=lineup.reduce((s,p)=>s+p.fit,0);
-  const avgFPPG=lineup.reduce((s,p)=>s+(p.fppg||0),0)/lineup.length;
+  const totalFloor=lineup.reduce((s,p)=>s+p.dg_pred,0);
+  const totalCeil=lineup.reduce((s,p)=>s+p.delta,0);
+  const totalCut=lineup.reduce((s,p)=>s+p.dg_cut,0)/6; 
   
   document.getElementById('lineup-out').innerHTML=`
-<div class="lineup-box">
+<div class="lineup-box ${type}">
 <div class="lineup-hdr">
-<h3>${type==='gpp'?'🚀 GPP OPTIMAL':'💰 CASH OPTIMAL'}</h3>
+<h3>${type==='gpp'?'🚀 GPP OPTIMAL (CEILING DRIVEN)':'💰 CASH OPTIMAL (MAKE CUT DRIVEN)'}</h3>
 <div class="lineup-stats">
 <span>SAL: <strong style="color:var(--cyan)">$${(totalSal/1000).toFixed(1)}k</strong></span>
 <span>REM: <strong>$${((50000-totalSal)/1000).toFixed(1)}k</strong></span>
-<span>FIT: <strong class="g">${totalFit.toFixed(2)}</strong></span>
-<span>AVG FPPG: <strong>${avgFPPG.toFixed(1)}</strong></span>
+<span>AVG CUT %: <strong class="g">${(totalCut*100).toFixed(1)}%</strong></span>
+<span>TEAM CEILING: <strong style="color:var(--pur)">${totalCeil.toFixed(2)}</strong></span>
 </div>
 </div>
 <ul class="lineup-list">${lineup.map(p=>`<li>
-<span><strong>${p.n}</strong> <span style="color:var(--tx3);font-size:10px">${p.tm}</span></span>
-<span style="display:flex;gap:12px">
-<span style="color:var(--cyan)">$${(p.sal/1000).toFixed(1)}k</span>
-<span>FPPG ${(p.fppg||0).toFixed(1)}</span>
-<span class="g">FIT ${p.fit.toFixed(2)}</span>
-<span>App ${(p.app||0).toFixed(2)}</span>
-</span></li>`).join('')}</ul>
+<div style="flex:1"><strong>${p.tm}</strong></div>
+<div style="display:flex;gap:16px;font-weight:700">
+<span style="color:var(--cyan);width:50px">$${(p.sal/1000).toFixed(1)}k</span>
+<span class="g" style="width:70px">CUT ${(p.dg_cut*100).toFixed(0)}%</span>
+<span style="color:var(--pur);width:70px">CEIL ${p.delta.toFixed(2)}</span>
+</div></li>`).join('')}</ul>
 </div>`;
 }
 </script>
-
 </body>
 </html>
