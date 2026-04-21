@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>🐊 Swamp Classic V11 — Zurich DFS Engine</title>
+<title>🐊 Swamp Classic V12 — Zurich DFS Engine</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -103,19 +103,6 @@ tbody tr:hover td:first-child{background:var(--sf2)}
 .stat-l{font-size:10px;color:var(--tx2);font-family:var(--fn)}
 .stat-v{font-weight:800;font-size:12px;font-family:var(--fn)}
 
-/* ── Loader Overlay ── */
-#loader-overlay{position:fixed;inset:0;background:rgba(5,7,10,0.95);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(10px)}
-.loader-box{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:30px;max-width:600px;width:100%;text-align:center;box-shadow:0 12px 48px rgba(0,0,0,0.5)}
-.loader-box h2{font-size:24px;color:#fff;margin-bottom:8px;font-weight:800}
-.loader-box p{color:var(--tx2);font-size:12px;margin-bottom:24px}
-.file-drop{border:2px dashed var(--pur);background:rgba(163,113,247,0.05);border-radius:8px;padding:40px 20px;cursor:pointer;transition:0.2s}
-.file-drop:hover, .file-drop.dragover{background:rgba(163,113,247,0.1);border-color:var(--cyan)}
-.file-drop input{display:none}
-.file-list{margin-top:20px;text-align:left;font-size:11px;color:var(--tx2)}
-.file-list li{padding:6px 0;border-bottom:1px dashed var(--bd2);display:flex;justify-content:space-between}
-.file-list li span.status{font-weight:800;color:var(--gld)}
-.file-list li span.status.ok{color:var(--grn)}
-
 /* Floating bar & Toast */
 .fab-wrap{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:94%;max-width:720px;z-index:100}
 .fab{background:rgba(13,17,23,.88);backdrop-filter:blur(20px);border:1px solid var(--bd);border-radius:14px;padding:10px 18px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 8px 32px rgba(0,0,0,.6);cursor:pointer}
@@ -131,36 +118,16 @@ tbody tr:hover td:first-child{background:var(--sf2)}
 </head>
 <body>
 
-<div id="loader-overlay">
-  <div class="loader-box">
-    <h2>🐊 V11 Field Ingestion</h2>
-    <p>Upload the 4 required CSVs to dynamically build the full Zurich field, resolve player IDs, and calculate projections. No data leaves your browser.</p>
-    <label class="file-drop" id="drop-zone">
-      <div style="font-size:32px;margin-bottom:12px">📁</div>
-      <div style="font-weight:700;color:var(--pur)">Click or Drag to Upload CSVs</div>
-      <div style="font-size:10px;color:var(--tx3);margin-top:6px">Requires: DKSalaries.csv, pga_field.csv, dg_decomposition.csv, preds_ch_model.csv</div>
-      <input type="file" id="file-input" multiple accept=".csv">
-    </label>
-    <ul class="file-list" id="file-list">
-      <li id="status-dk">DraftKings Salaries <span class="status">Waiting...</span></li>
-      <li id="status-field">DataGolf Field <span class="status">Waiting...</span></li>
-      <li id="status-decomp">DataGolf Decomposition <span class="status">Waiting...</span></li>
-      <li id="status-preds">DataGolf Predictions <span class="status">Waiting...</span></li>
-    </ul>
-    <button id="btn-build" style="margin-top:20px;width:100%;padding:12px;background:var(--pur);color:#000;border:none;border-radius:6px;font-weight:800;cursor:pointer;display:none;font-family:var(--fn)">INITIALIZE ENGINE</button>
-  </div>
-</div>
-
 <div class="wrap">
 <header>
   <div class="logo">
     <div class="logo-icon" aria-hidden="true">🐊</div>
     <div class="logo-text">
-      <h1>SWAMP CLASSIC V11</h1>
-      <div class="sub">Dynamic CSV Ingestion · Zurich Variance Compression</div>
+      <h1>SWAMP CLASSIC V12</h1>
+      <div class="sub">Full Field Engine · Zurich Foursomes Variance Compression</div>
     </div>
   </div>
-  <div class="hdr-meta" id="hdrMeta">Waiting for Data...</div>
+  <div class="hdr-meta" id="hdrMeta">Loading Data...</div>
 </header>
 
 <div class="tabs" role="tablist">
@@ -174,6 +141,8 @@ tbody tr:hover td:first-child{background:var(--sf2)}
     <button class="chip on" data-filter="all">ALL</button>
     <button class="chip pur" data-filter="lev">🎯 HIGH LEVERAGE</button>
     <button class="chip gld" data-filter="value">💎 VALUE &gt;4.5</button>
+    <button class="chip" data-filter="am">☀️ AM WAVE</button>
+    <button class="chip" data-filter="pm">🌙 PM WAVE</button>
   </div>
   <div class="tw">
     <table id="pool-table">
@@ -181,6 +150,7 @@ tbody tr:hover td:first-child{background:var(--sf2)}
         <th data-c="name">PLAYER <span class="arr">▼</span></th>
         <th data-c="salary">SALARY <span class="arr">▼</span></th>
         <th data-c="team">TEAM <span class="arr">▼</span></th>
+        <th data-c="wave">WAVE <span class="arr">▼</span></th>
         <th data-c="proj">PROJ <span class="arr">▼</span></th>
         <th data-c="sg">SG/RD <span class="arr">▼</span></th>
         <th data-c="zSigma" title="Zurich Compressed Variance">z-σ <span class="arr">▼</span></th>
@@ -197,7 +167,7 @@ tbody tr:hover td:first-child{background:var(--sf2)}
   <div class="build-grid">
     <div class="build-main">
       <h3>🛠 ZURICH LINEUP BUILDER</h3>
-      <p>Dynamic Programming Knapsack. Enforces 6 players, 1-per-pair strictly. V11 applies `zSigma` compression.</p>
+      <p>Dynamic Programming Knapsack. Enforces 6 players, 1-per-pair strictly. V12 applies `zSigma` compression to accurately reflect Foursomes limits.</p>
       <div class="opt-btns">
         <button class="opt-btn gpp" data-gen="gpp"><strong>🎯 GPP — CEILING MAX</strong><span>proj + 0.5(zSigma)</span></button>
         <button class="opt-btn lev" data-gen="lev"><strong>⚖️ GPP — LEVERAGE MAX</strong><span>proj + 0.5(zSigma) − 0.25(own)</span></button>
@@ -240,6 +210,158 @@ tbody tr:hover td:first-child{background:var(--sf2)}
 <script>
 'use strict';
 
+const RAW_DATA = [
+  {"n":"Matt Fitzpatrick","s":10500,"t":"T27","w":"PM","p":62.9,"zs":2.3,"win":0.068,"o":28.5,"l":-21.7,"sg":1.87},
+  {"n":"Alex Fitzpatrick","s":10500,"t":"T27","w":"PM","p":45.6,"zs":2.3,"win":0.068,"o":20.3,"l":-13.5,"sg":0.22},
+  {"n":"Brooks Koepka","s":10000,"t":"T51","w":"PM","p":48.9,"zs":2.4,"win":0.052,"o":19.9,"l":-14.7,"sg":0.8},
+  {"n":"Shane Lowry","s":10000,"t":"T51","w":"PM","p":49.5,"zs":2.3,"win":0.052,"o":20.2,"l":-15.0,"sg":0.86},
+  {"n":"Ben Griffin","s":9700,"t":"T32","w":"AM","p":49.4,"zs":2.3,"win":0.043,"o":19.0,"l":-14.7,"sg":0.97},
+  {"n":"Andrew Novak","s":9700,"t":"T32","w":"AM","p":45.3,"zs":2.4,"win":0.043,"o":16.9,"l":-12.6,"sg":0.57},
+  {"n":"Ryan Gerard","s":9500,"t":"T29","w":"PM","p":51.2,"zs":2.3,"win":0.05,"o":22.0,"l":-17.0,"sg":1.03},
+  {"n":"Sudarshan Yellamaraju","s":9500,"t":"T29","w":"PM","p":47.1,"zs":2.4,"win":0.05,"o":19.8,"l":-14.8,"sg":0.63},
+  {"n":"Karl Vilips","s":9400,"t":"T74","w":"AM","p":37.6,"zs":2.4,"win":0.035,"o":12.1,"l":-8.6,"sg":-0.01},
+  {"n":"Michael Thorbjornsen","s":9400,"t":"T74","w":"AM","p":48.3,"zs":2.4,"win":0.035,"o":17.8,"l":-14.2,"sg":1.07},
+  {"n":"Aaron Rai","s":9200,"t":"T68","w":"AM","p":42.6,"zs":2.2,"win":0.035,"o":15.1,"l":-11.6,"sg":0.43},
+  {"n":"Sahith Theegala","s":9200,"t":"T68","w":"AM","p":47.5,"zs":2.4,"win":0.035,"o":17.7,"l":-14.2,"sg":0.92},
+  {"n":"Marco Penge","s":9100,"t":"T64","w":"AM","p":44.8,"zs":2.4,"win":0.037,"o":17.0,"l":-13.3,"sg":0.68},
+  {"n":"Matt Wallace","s":9100,"t":"T64","w":"AM","p":42.6,"zs":2.3,"win":0.037,"o":15.7,"l":-12.1,"sg":0.46},
+  {"n":"Hao-Tong Li","s":9000,"t":"T53","w":"PM","p":42.2,"zs":2.4,"win":0.037,"o":15.9,"l":-12.2,"sg":0.41},
+  {"n":"Wyndham Clark","s":8900,"t":"T14","w":"AM","p":45.7,"zs":2.4,"win":0.035,"o":17.8,"l":-14.2,"sg":0.81},
+  {"n":"Taylor Moore","s":8900,"t":"T14","w":"AM","p":39.8,"zs":2.4,"win":0.035,"o":14.5,"l":-10.9,"sg":0.22},
+  {"n":"Austin Eckroat","s":8800,"t":"T24","w":"AM","p":37.8,"zs":2.3,"win":0.025,"o":11.4,"l":-8.9,"sg":0.21},
+  {"n":"Davis Thompson","s":8800,"t":"T24","w":"AM","p":42.2,"zs":2.3,"win":0.025,"o":13.9,"l":-11.4,"sg":0.66},
+  {"n":"Mac Meissner","s":8700,"t":"T56","w":"AM","p":40.8,"zs":2.3,"win":0.027,"o":13.8,"l":-11.1,"sg":0.43},
+  {"n":"Kristoffer Reitan","s":8600,"t":"T69","w":"PM","p":41.2,"zs":2.4,"win":0.027,"o":14.3,"l":-11.6,"sg":0.57},
+  {"n":"Kris Ventura","s":8600,"t":"T69","w":"PM","p":35.5,"zs":2.4,"win":0.027,"o":11.0,"l":-8.3,"sg":-0.01},
+  {"n":"Alex Smalley","s":8500,"t":"T72","w":"AM","p":40.1,"zs":2.3,"win":0.019,"o":12.5,"l":-10.5,"sg":0.64},
+  {"n":"Hayden Springer","s":8500,"t":"T72","w":"AM","p":31.2,"zs":2.4,"win":0.019,"o":7.2,"l":-5.3,"sg":-0.3},
+  {"n":"Taylor Pendrith","s":8400,"t":"T44","w":"AM","p":39.9,"zs":2.3,"win":0.022,"o":13.2,"l":-11.0,"sg":0.52},
+  {"n":"Mackenzie Hughes","s":8400,"t":"T44","w":"AM","p":35.3,"zs":2.4,"win":0.022,"o":10.5,"l":-8.2,"sg":0.04},
+  {"n":"Sam Stevens","s":8300,"t":"T01","w":"PM","p":43.9,"zs":2.3,"win":0.022,"o":15.8,"l":-13.6,"sg":0.87},
+  {"n":"Michael Brennan","s":8200,"t":"T06","w":"AM","p":46.4,"zs":2.4,"win":0.043,"o":21.8,"l":-17.6,"sg":0.79},
+  {"n":"Keith Mitchell","s":8100,"t":"T59","w":"PM","p":38.8,"zs":2.4,"win":0.011,"o":11.2,"l":-10.1,"sg":0.76},
+  {"n":"Brandt Snedeker","s":8100,"t":"T59","w":"PM","p":24.6,"zs":2.3,"win":0.011,"o":2.8,"l":-1.6,"sg":-0.78},
+  {"n":"Tom Kim","s":8000,"t":"T48","w":"AM","p":35.9,"zs":2.3,"win":0.02,"o":11.4,"l":-9.4,"sg":0.2},
+  {"n":"Kevin Yu","s":8000,"t":"T48","w":"AM","p":36.5,"zs":2.3,"win":0.02,"o":11.8,"l":-9.8,"sg":0.27},
+  {"n":"Tony Finau","s":7900,"t":"T26","w":"AM","p":33.0,"zs":2.4,"win":0.016,"o":9.0,"l":-7.4,"sg":-0.03},
+  {"n":"Max Greyserman","s":7900,"t":"T26","w":"AM","p":34.7,"zs":2.4,"win":0.016,"o":10.1,"l":-8.5,"sg":0.15},
+  {"n":"Max McGreevy","s":7800,"t":"T57","w":"PM","p":39.0,"zs":2.3,"win":0.019,"o":13.9,"l":-11.9,"sg":0.51},
+  {"n":"Kevin Roy","s":7800,"t":"T57","w":"PM","p":35.5,"zs":2.3,"win":0.019,"o":11.6,"l":-9.7,"sg":0.14},
+  {"n":"Matti Schmid","s":7700,"t":"T66","w":"AM","p":33.1,"zs":2.4,"win":0.015,"o":9.4,"l":-8.0,"sg":0.04},
+  {"n":"Seamus Power","s":7700,"t":"T66","w":"AM","p":33.4,"zs":2.3,"win":0.015,"o":9.6,"l":-8.2,"sg":0.07},
+  {"n":"Rico Hoey","s":7600,"t":"T40","w":"AM","p":37.6,"zs":2.4,"win":0.016,"o":12.9,"l":-11.3,"sg":0.47},
+  {"n":"David Lipsky","s":7600,"t":"T40","w":"AM","p":31.4,"zs":2.3,"win":0.016,"o":8.8,"l":-7.2,"sg":-0.19},
+  {"n":"John Parry","s":7600,"t":"T08","w":"AM","p":36.0,"zs":2.2,"win":0.014,"o":11.4,"l":-10.1,"sg":0.39},
+  {"n":"Jacob Skov Olesen","s":7500,"t":"T62","w":"AM","p":27.6,"zs":2.3,"win":0.011,"o":5.5,"l":-4.5,"sg":-0.43},
+  {"n":"Rasmus Neergaard-Petersen","s":7500,"t":"T62","w":"AM","p":34.5,"zs":2.4,"win":0.011,"o":10.1,"l":-9.0,"sg":0.31},
+  {"n":"Stephan Jaeger","s":7500,"t":"T45","w":"PM","p":33.1,"zs":2.4,"win":0.011,"o":9.2,"l":-8.1,"sg":0.23},
+  {"n":"Jackson Suber","s":7500,"t":"T45","w":"PM","p":25.7,"zs":2.4,"win":0.011,"o":4.2,"l":-3.2,"sg":-0.59},
+  {"n":"Austin Smotherman","s":7500,"t":"T67","w":"PM","p":35.8,"zs":2.4,"win":0.013,"o":11.4,"l":-10.1,"sg":0.32},
+  {"n":"Andrew Putnam","s":7500,"t":"T67","w":"PM","p":33.1,"zs":2.2,"win":0.013,"o":9.7,"l":-8.4,"sg":0.04},
+  {"n":"Erik Van Rooyen","s":7400,"t":"T02","w":"AM","p":25.7,"zs":2.4,"win":0.009,"o":4.1,"l":-3.2,"sg":-0.55},
+  {"n":"Christiaan Bezuidenhout","s":7400,"t":"T02","w":"AM","p":33.4,"zs":2.2,"win":0.009,"o":9.4,"l":-8.5,"sg":0.3},
+  {"n":"Casey Jarvis","s":7400,"t":"T25","w":"PM","p":35.5,"zs":2.3,"win":0.015,"o":11.9,"l":-10.5,"sg":0.29},
+  {"n":"A.J. Ewart","s":7400,"t":"T25","w":"PM","p":31.5,"zs":2.3,"win":0.015,"o":9.2,"l":-7.8,"sg":-0.14},
+  {"n":"Eric Cole","s":7400,"t":"T15","w":"PM","p":31.9,"zs":2.3,"win":0.01,"o":8.5,"l":-7.5,"sg":0.11},
+  {"n":"Hank Lebioda","s":7400,"t":"T15","w":"PM","p":28.6,"zs":2.3,"win":0.01,"o":6.2,"l":-5.3,"sg":-0.26},
+  {"n":"Beau Hossler","s":7300,"t":"T43","w":"PM","p":30.8,"zs":2.4,"win":0.01,"o":8.0,"l":-7.0,"sg":-0.01},
+  {"n":"Sam Ryder","s":7300,"t":"T43","w":"PM","p":27.9,"zs":2.4,"win":0.01,"o":6.0,"l":-5.1,"sg":-0.33},
+  {"n":"Pontus Nyholm","s":7300,"t":"T63","w":"PM","p":28.4,"zs":2.4,"win":0.013,"o":7.0,"l":-5.7,"sg":-0.33},
+  {"n":"Jesper Svensson","s":7300,"t":"T63","w":"PM","p":29.9,"zs":2.4,"win":0.013,"o":8.0,"l":-6.8,"sg":-0.16},
+  {"n":"Vince Whaley","s":7300,"t":"T71","w":"PM","p":30.2,"zs":2.3,"win":0.008,"o":7.2,"l":-6.5,"sg":0.03},
+  {"n":"Greyson Sigg","s":7300,"t":"T71","w":"PM","p":26.6,"zs":2.3,"win":0.008,"o":4.7,"l":-4.0,"sg":-0.38},
+  {"n":"Zecheng Dou","s":7200,"t":"T21","w":"PM","p":32.3,"zs":2.4,"win":0.011,"o":9.5,"l":-8.5,"sg":0.08},
+  {"n":"Dylan Wu","s":7200,"t":"T21","w":"PM","p":30.4,"zs":2.3,"win":0.011,"o":8.2,"l":-7.1,"sg":-0.13},
+  {"n":"William Mouw","s":7200,"t":"T46","w":"AM","p":35.0,"zs":2.4,"win":0.011,"o":11.5,"l":-10.4,"sg":0.35},
+  {"n":"Takumi Kanaya","s":7200,"t":"T46","w":"AM","p":28.7,"zs":2.3,"win":0.011,"o":7.1,"l":-6.0,"sg":-0.34},
+  {"n":"Garrick Higgo","s":7200,"t":"T37","w":"PM","p":27.9,"zs":2.4,"win":0.005,"o":5.4,"l":-4.9,"sg":-0.07},
+  {"n":"Matt Kuchar","s":7200,"t":"T37","w":"PM","p":22.6,"zs":2.2,"win":0.005,"o":1.7,"l":-1.2,"sg":-0.68},
+  {"n":"Adrien Dumont De Chassart","s":7100,"t":"T13","w":"PM","p":34.8,"zs":2.4,"win":0.009,"o":11.3,"l":-10.4,"sg":0.43},
+  {"n":"Davis Chatfield","s":7100,"t":"T13","w":"PM","p":25.1,"zs":2.3,"win":0.009,"o":4.5,"l":-3.6,"sg":-0.63},
+  {"n":"Billy Horschel","s":7100,"t":"T42","w":"AM","p":30.2,"zs":2.3,"win":0.01,"o":8.3,"l":-7.3,"sg":-0.04},
+  {"n":"Tom Hoge","s":7100,"t":"T42","w":"AM","p":27.2,"zs":2.4,"win":0.01,"o":6.1,"l":-5.1,"sg":-0.38},
+  {"n":"Chris Kirk","s":7100,"t":"T49","w":"PM","p":31.3,"zs":2.3,"win":0.007,"o":8.4,"l":-7.7,"sg":0.2},
+  {"n":"Patton Kizzire","s":7100,"t":"T49","w":"PM","p":22.3,"zs":2.4,"win":0.007,"o":2.0,"l":-1.4,"sg":-0.81},
+  {"n":"Chad Ramey","s":7000,"t":"T55","w":"PM","p":30.5,"zs":2.3,"win":0.007,"o":8.2,"l":-7.5,"sg":0.09},
+  {"n":"Justin Lower","s":7000,"t":"T55","w":"PM","p":23.3,"zs":2.4,"win":0.007,"o":3.1,"l":-2.4,"sg":-0.72},
+  {"n":"Jeffrey Kang","s":7000,"t":"T30","w":"AM","p":21.3,"zs":2.4,"win":0.008,"o":2.2,"l":-1.3,"sg":-0.96},
+  {"n":"Doug Ghim","s":7000,"t":"T30","w":"AM","p":32.7,"zs":2.3,"win":0.008,"o":10.0,"l":-9.2,"sg":0.32},
+  {"n":"Blades Brown","s":7000,"t":"T07","w":"PM","p":34.8,"zs":2.4,"win":0.014,"o":12.6,"l":-11.2,"sg":0.31},
+  {"n":"Luke Clanton","s":7000,"t":"T07","w":"PM","p":27.4,"zs":2.4,"win":0.014,"o":7.3,"l":-5.9,"sg":-0.49},
+  {"n":"Matthieu Pavon","s":6900,"t":"T17","w":"PM","p":25.5,"zs":2.4,"win":0.007,"o":4.8,"l":-4.1,"sg":-0.42},
+  {"n":"Martin Couvra","s":6900,"t":"T17","w":"PM","p":26.8,"zs":2.3,"win":0.007,"o":5.7,"l":-5.1,"sg":-0.28},
+  {"n":"Chandler Blanchet","s":6900,"t":"T04","w":"AM","p":32.1,"zs":2.3,"win":0.011,"o":10.5,"l":-9.4,"sg":0.09},
+  {"n":"John VanDerLaan","s":6900,"t":"T04","w":"AM","p":29.0,"zs":2.4,"win":0.011,"o":8.2,"l":-7.1,"sg":-0.25},
+  {"n":"Chandler Phillips","s":6900,"t":"T65","w":"PM","p":25.9,"zs":2.3,"win":0.006,"o":5.0,"l":-4.4,"sg":-0.36},
+  {"n":"Carson Young","s":6900,"t":"T65","w":"PM","p":26.3,"zs":2.3,"win":0.006,"o":5.3,"l":-4.7,"sg":-0.31},
+  {"n":"Neal Shipley","s":6800,"t":"T52","w":"AM","p":26.1,"zs":2.4,"win":0.01,"o":6.1,"l":-5.2,"sg":-0.45},
+  {"n":"Christo Lamprecht","s":6800,"t":"T52","w":"AM","p":26.6,"zs":2.5,"win":0.01,"o":6.4,"l":-5.5,"sg":-0.4},
+  {"n":"Adam Svensson","s":6800,"t":"T34","w":"AM","p":28.4,"zs":2.3,"win":0.007,"o":7.3,"l":-6.6,"sg":-0.17},
+  {"n":"Adam Hadwin","s":6800,"t":"T34","w":"AM","p":26.8,"zs":2.4,"win":0.007,"o":6.2,"l":-5.5,"sg":-0.34},
+  {"n":"Ben Silverman","s":6800,"t":"T12","w":"AM","p":23.2,"zs":2.3,"win":0.006,"o":3.3,"l":-2.7,"sg":-0.68},
+  {"n":"Cameron Champ","s":6800,"t":"T12","w":"AM","p":26.6,"zs":2.5,"win":0.006,"o":5.8,"l":-5.2,"sg":-0.29},
+  {"n":"Lanto Griffin","s":6700,"t":"T33","w":"PM","p":23.3,"zs":2.3,"win":0.005,"o":3.3,"l":-2.8,"sg":-0.57},
+  {"n":"Ben Kohles","s":6700,"t":"T33","w":"PM","p":24.9,"zs":2.3,"win":0.005,"o":4.6,"l":-4.1,"sg":-0.37},
+  {"n":"Trace Crowe","s":6700,"t":"T18","w":"AM","p":27.3,"zs":2.4,"win":0.004,"o":6.2,"l":-5.8,"sg":-0.05},
+  {"n":"Ben Martin","s":6700,"t":"T18","w":"AM","p":18.4,"zs":2.3,"win":0.004,"o":1.2,"l":-0.9,"sg":-1.1},
+  {"n":"Kevin Streelman","s":6700,"t":"T19","w":"PM","p":22.9,"zs":2.4,"win":0.006,"o":3.4,"l":-2.8,"sg":-0.7},
+  {"n":"Joel Dahmen","s":6700,"t":"T19","w":"PM","p":28.7,"zs":2.3,"win":0.006,"o":7.7,"l":-7.1,"sg":-0.04},
+  {"n":"Patrick Fishburn","s":6600,"t":"T03","w":"PM","p":24.7,"zs":2.4,"win":0.006,"o":5.0,"l":-4.4,"sg":-0.54},
+  {"n":"Zac Blair","s":6600,"t":"T03","w":"PM","p":29.1,"zs":2.2,"win":0.006,"o":8.3,"l":-7.7,"sg":-0.05},
+  {"n":"Brice Garnett","s":6600,"t":"T28","w":"AM","p":18.7,"zs":2.3,"win":0.004,"o":1.3,"l":-0.9,"sg":-1.08},
+  {"n":"Lee Hodges","s":6600,"t":"T28","w":"AM","p":29.1,"zs":2.3,"win":0.004,"o":7.8,"l":-7.4,"sg":0.13},
+  {"n":"Danny Walker","s":6600,"t":"T73","w":"PM","p":22.2,"zs":2.4,"win":0.006,"o":3.0,"l":-2.4,"sg":-0.71},
+  {"n":"Jimmy Stanger","s":6600,"t":"T73","w":"PM","p":22.6,"zs":2.4,"win":0.006,"o":3.4,"l":-2.8,"sg":-0.65},
+  {"n":"David Skinns","s":6600,"t":"T61","w":"PM","p":24.9,"zs":2.4,"win":0.007,"o":5.3,"l":-4.6,"sg":-0.46},
+  {"n":"Trey Mullinax","s":6600,"t":"T61","w":"PM","p":23.8,"zs":2.4,"win":0.007,"o":4.4,"l":-3.7,"sg":-0.59},
+  {"n":"Davis Riley","s":6500,"t":"T36","w":"AM","p":17.7,"zs":2.5,"win":0.003,"o":1.1,"l":-0.8,"sg":-1.08},
+  {"n":"Nick Hardy","s":6500,"t":"T36","w":"AM","p":20.4,"zs":2.4,"win":0.003,"o":1.3,"l":-1.0,"sg":-0.75},
+  {"n":"Keita Nakajima","s":6500,"t":"T39","w":"PM","p":24.8,"zs":2.4,"win":0.005,"o":4.9,"l":-4.5,"sg":-0.38},
+  {"n":"Kensei Hirata","s":6500,"t":"T39","w":"PM","p":22.2,"zs":2.3,"win":0.005,"o":3.0,"l":-2.6,"sg":-0.68},
+  {"n":"Taylor Montgomery","s":6400,"t":"T60","w":"AM","p":20.6,"zs":2.4,"win":0.002,"o":1.6,"l":-1.4,"sg":-0.56},
+  {"n":"Scott Piercy","s":6400,"t":"T60","w":"AM","p":11.2,"zs":2.4,"win":0.002,"o":1.0,"l":-0.7,"sg":-1.75},
+  {"n":"Adam Schenk","s":6400,"t":"T22","w":"AM","p":24.1,"zs":2.4,"win":0.005,"o":4.8,"l":-4.3,"sg":-0.46},
+  {"n":"Tyler Duncan","s":6400,"t":"T22","w":"AM","p":22.3,"zs":2.3,"win":0.005,"o":3.4,"l":-2.9,"sg":-0.67},
+  {"n":"Harry Higgs","s":6400,"t":"T38","w":"AM","p":19.3,"zs":2.4,"win":0.003,"o":1.2,"l":-0.8,"sg":-0.89},
+  {"n":"Jeremy Paul","s":6400,"t":"T38","w":"AM","p":20.0,"zs":2.4,"win":0.003,"o":1.3,"l":-0.9,"sg":-0.81},
+  {"n":"Mark Hubbard","s":6300,"t":"T05","w":"PM","p":24.6,"zs":2.3,"win":0.004,"o":5.3,"l":-4.9,"sg":-0.3},
+  {"n":"Ryan Brehm","s":6300,"t":"T05","w":"PM","p":15.8,"zs":2.5,"win":0.004,"o":1.2,"l":-0.9,"sg":-1.34},
+  {"n":"Nick Dunlap","s":6300,"t":"T23","w":"PM","p":19.3,"zs":2.4,"win":0.005,"o":1.4,"l":-1.0,"sg":-0.96},
+  {"n":"Gordon Sargent","s":6300,"t":"T23","w":"PM","p":21.5,"zs":2.5,"win":0.005,"o":3.0,"l":-2.6,"sg":-0.7},
+  {"n":"Rafael Campos","s":6300,"t":"T10","w":"AM","p":16.2,"zs":2.5,"win":0.004,"o":1.3,"l":-0.9,"sg":-1.25},
+  {"n":"Alejandro Tosti","s":6300,"t":"T10","w":"AM","p":20.3,"zs":2.5,"win":0.004,"o":1.9,"l":-1.5,"sg":-0.75},
+  {"n":"Frankie Capan","s":6200,"t":"T11","w":"PM","p":12.9,"zs":2.5,"win":0.003,"o":1.0,"l":-0.8,"sg":-1.62},
+  {"n":"Noah Goodwin","s":6200,"t":"T11","w":"PM","p":23.8,"zs":2.3,"win":0.003,"o":4.7,"l":-4.4,"sg":-0.29},
+  {"n":"Henrik Norlander","s":6200,"t":"T54","w":"AM","p":19.2,"zs":2.3,"win":0.003,"o":1.1,"l":-0.8,"sg":-0.88},
+  {"n":"Luke List","s":6200,"t":"T54","w":"AM","p":19.3,"zs":2.5,"win":0.003,"o":1.2,"l":-0.9,"sg":-0.86},
+  {"n":"Paul Peterson","s":6200,"t":"T31","w":"PM","p":18.6,"zs":2.2,"win":0.002,"o":1.0,"l":-0.7,"sg":-0.87},
+  {"n":"Will Gordon","s":6200,"t":"T31","w":"PM","p":17.2,"zs":2.5,"win":0.002,"o":1.0,"l":-0.7,"sg":-1.05},
+  {"n":"Peter Malnati","s":6100,"t":"T50","w":"AM","p":16.9,"zs":2.4,"win":0.002,"o":0.8,"l":-0.7,"sg":-1.03},
+  {"n":"Russell Knox","s":6100,"t":"T50","w":"AM","p":17.4,"zs":2.3,"win":0.002,"o":0.8,"l":-0.7,"sg":-0.97},
+  {"n":"Chan Kim","s":6100,"t":"T47","w":"PM","p":21.1,"zs":2.4,"win":0.002,"o":2.6,"l":-2.5,"sg":-0.52},
+  {"n":"Ryan Palmer","s":6100,"t":"T47","w":"PM","p":10.1,"zs":2.5,"win":0.002,"o":0.8,"l":-0.7,"sg":-1.89},
+  {"n":"Geoff Ogilvy","s":6100,"t":"T20","w":"AM","p":7.0,"zs":2.6,"win":0.001,"o":0.7,"l":-0.6,"sg":-2.2},
+  {"n":"Charley Hoffman","s":6100,"t":"T41","w":"PM","p":17.8,"zs":2.5,"win":0.002,"o":1.0,"l":-0.7,"sg":-0.98},
+  {"n":"Nick Watney","s":6100,"t":"T41","w":"PM","p":15.5,"zs":2.5,"win":0.002,"o":1.0,"l":-0.7,"sg":-1.26},
+  {"n":"Marcelo Rozo","s":6000,"t":"T70","w":"AM","p":15.4,"zs":2.4,"win":0.002,"o":0.8,"l":-0.7,"sg":-1.17},
+  {"n":"Camilo Villegas","s":6000,"t":"T70","w":"AM","p":14.8,"zs":2.4,"win":0.002,"o":0.8,"l":-0.7,"sg":-1.25},
+  {"n":"Jonathan Byrd","s":6000,"t":"T09","w":"PM","p":14.4,"zs":2.3,"win":0.001,"o":0.7,"l":-0.6,"sg":-1.26},
+  {"n":"Chez Reavie","s":6000,"t":"T09","w":"PM","p":16.3,"zs":2.3,"win":0.001,"o":0.7,"l":-0.6,"sg":-1.02},
+  {"n":"Troy Merritt","s":6000,"t":"T58","w":"AM","p":15.9,"zs":2.4,"win":0.001,"o":0.7,"l":-0.6,"sg":-1.06},
+  {"n":"Robert Streb","s":6000,"t":"T58","w":"AM","p":10.4,"zs":2.5,"win":0.001,"o":0.7,"l":-0.6,"sg":-1.77},
+  {"n":"Austin Cook","s":6000,"t":"T16","w":"AM","p":9.0,"zs":2.5,"win":0.0,"o":0.5,"l":-0.5,"sg":-1.84},
+  {"n":"Jason Dufner","s":6000,"t":"T16","w":"AM","p":10.1,"zs":2.4,"win":0.0,"o":0.5,"l":-0.5,"sg":-1.69},
+  {"n":"James Hahn","s":6000,"t":"T35","w":"PM","p":9.4,"zs":2.4,"win":0.0,"o":0.5,"l":-0.5,"sg":-1.71},
+  {"n":"Kyle Stanley","s":6000,"t":"T35","w":"PM","p":-1.4,"zs":2.7,"win":0.0,"o":0.5,"l":-0.5,"sg":-3.23}
+];
+
+// ── EXPAND BACK TO FRONTEND EXPECTED SCHEMA ──
+const P = RAW_DATA.map(x => ({
+  name: x.n, salary: x.s, team: x.t, wave: x.w + (x.w === 'AM' ? '/PM' : '/AM'),
+  proj: x.p, zSigma: x.zs, winCh: x.win, own: x.o, leverage: x.l, sg: x.sg,
+  locked: false, excluded: false, val: x.s > 0 ? x.p / (x.s / 1000) : 0
+}));
+
 /* ══ UTILS & FORMATTING ══════════════════════════════════ */
 const esc = s => String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const f1 = v => v==null?'—':Number(v).toFixed(1);
@@ -256,266 +378,15 @@ function toast(m,k='ok'){
   _tt=setTimeout(()=>el.classList.remove('show'),3000);
 }
 
-/* ══ STATE ══════════════════════════════════ */
-let P = [];
 let PSORT = 'proj', PASC = false, PFILTER = 'all';
 
-// File Parsing State
-const RAW = { dk: null, field: null, decomp: null, preds: null };
-
-/* ══ CSV PARSER ENGINE ══════════════════════════════════ */
-function parseCSV(text) {
-    let p = '', row = [''], ret = [row], i = 0, r = 0, s = !0, l;
-    for (l of text) {
-        if ('"' === l) { if (s && l === p) row[i] += l; s = !s; }
-        else if (',' === l && s) l = row[++i] = '';
-        else if ('\n' === l && s) { if ('\r' === p) row[i] = row[i].slice(0, -1); row = ret[++r] = [l = '']; i = 0; }
-        else row[i] += l; p = l;
-    }
-    // Remove empty trailing row if exists
-    if(ret[ret.length-1].length === 1 && ret[ret.length-1][0] === "") ret.pop();
-    return ret;
-}
-
-function oddsToProb(oddsStr) {
-    if(!oddsStr) return 0;
-    const odds = parseInt(oddsStr, 10);
-    if(isNaN(odds)) return 0;
-    if (odds > 0) return 100 / (odds + 100);
-    return Math.abs(odds) / (Math.abs(odds) + 100);
-}
-
-// Convert "Last, First" to "First Last"
-function reverseName(name) {
-    if(!name) return "";
-    if(name.includes(',')) {
-        const parts = name.split(',');
-        return (parts[1].trim() + " " + parts[0].trim()).replace(/\s+/g, ' ');
-    }
-    return name.trim();
-}
-
-/* ══ FILE UPLOAD LOGIC ══════════════════════════════════ */
-const dropZone = document.getElementById('drop-zone');
-const fileInput = document.getElementById('file-input');
-const btnBuild = document.getElementById('btn-build');
-
-['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
-    dropZone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); }, false);
+/* ══ INIT ════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('hdrMeta').innerHTML = `<span>${P.length}</span> players · <span>${new Set(P.map(x=>x.team)).size}</span> teams · ρ=<span>0.65</span>`;
+  renderPool();
+  wire();
+  toast('Full Field Engine Ready.', 'ok');
 });
-dropZone.addEventListener('dragover', () => dropZone.classList.add('dragover'));
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-dropZone.addEventListener('drop', e => {
-    dropZone.classList.remove('dragover');
-    handleFiles(e.dataTransfer.files);
-});
-fileInput.addEventListener('change', e => handleFiles(e.target.files));
-
-function handleFiles(files) {
-    Array.from(files).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = e => {
-            const text = e.target.result;
-            const lines = text.split('\n');
-            const header = lines[0].toLowerCase();
-            
-            if(header.includes('salary') && header.includes('position')) {
-                RAW.dk = parseCSV(text);
-                document.getElementById('status-dk').innerHTML = 'DraftKings Salaries <span class="status ok">Loaded ✅</span>';
-            } else if (header.includes('dg_rank') || header.includes('partner_dg_id')) {
-                RAW.field = parseCSV(text);
-                document.getElementById('status-field').innerHTML = 'DataGolf Field <span class="status ok">Loaded ✅</span>';
-            } else if (header.includes('baseline') && header.includes('course_fit')) {
-                RAW.decomp = parseCSV(text);
-                document.getElementById('status-decomp').innerHTML = 'DataGolf Decomposition <span class="status ok">Loaded ✅</span>';
-            } else if (header.includes('make_cut') && header.includes('p1_dg_id')) {
-                RAW.preds = parseCSV(text);
-                document.getElementById('status-preds').innerHTML = 'DataGolf Predictions <span class="status ok">Loaded ✅</span>';
-            }
-            checkReady();
-        };
-        reader.readAsText(file);
-    });
-}
-
-function checkReady() {
-    if (RAW.dk && RAW.field && RAW.decomp && RAW.preds) {
-        btnBuild.style.display = 'block';
-    }
-}
-
-btnBuild.addEventListener('click', buildEngine);
-
-/* ══ DATA INGESTION PIPELINE ══════════════════════════════════ */
-function buildEngine() {
-    try {
-        const playersMap = new Map(); // Key: dg_id
-        
-        // 1. Process Field (Establishes dg_id identity and team pairings)
-        const fieldHdr = RAW.field[0];
-        const fIdIdx = fieldHdr.indexOf('dg_id');
-        const fNameIdx = fieldHdr.indexOf('player_name');
-        const fPartnerIdx = fieldHdr.indexOf('partner_dg_id');
-        
-        // Give teams an arbitrary ID
-        let teamCounter = 1;
-        const assignedTeams = new Map();
-
-        for(let i=1; i<RAW.field.length; i++) {
-            const row = RAW.field[i];
-            if(row.length < fIdIdx) continue;
-            const dgId = row[fIdIdx];
-            const nameReversed = reverseName(row[fNameIdx]);
-            const partnerId = row[fPartnerIdx];
-            
-            if(!dgId) continue;
-
-            let tId = assignedTeams.get(dgId) || assignedTeams.get(partnerId);
-            if(!tId) {
-                tId = "T" + String(teamCounter).padStart(2, '0');
-                teamCounter++;
-                assignedTeams.set(dgId, tId);
-                assignedTeams.set(partnerId, tId);
-            }
-
-            playersMap.set(dgId, {
-                dgId: dgId,
-                name: nameReversed,
-                team: tId,
-                dkId: null,
-                salary: 0,
-                sg: 0,
-                courseFit: 0,
-                sigma: 0,
-                winCh: 0,
-                cutCh: 0,
-                locked: false,
-                excluded: false
-            });
-        }
-
-        // 2. Process DK Salaries (Map by Name)
-        const dkHdr = RAW.dk[0];
-        const dkNameIdx = dkHdr.indexOf('Name');
-        const dkSalIdx = dkHdr.indexOf('Salary');
-        const dkIdIdx = dkHdr.indexOf('ID');
-
-        for(let i=1; i<RAW.dk.length; i++){
-            const row = RAW.dk[i];
-            if(!row[dkNameIdx]) continue;
-            const dkName = row[dkNameIdx].trim();
-            const sal = parseInt(row[dkSalIdx], 10);
-            
-            // Find player in map by Name
-            let matchedId = null;
-            for(const [id, p] of playersMap.entries()){
-                // basic string matching, handle variations if needed
-                if(p.name.toLowerCase() === dkName.toLowerCase() || p.name.includes(dkName) || dkName.includes(p.name)) {
-                    matchedId = id;
-                    break;
-                }
-            }
-            if(matchedId) {
-                playersMap.get(matchedId).salary = sal;
-                playersMap.get(matchedId).dkId = row[dkIdIdx];
-            }
-        }
-
-        // 3. Process DG Decomposition (Map by Name)
-        const decHdr = RAW.decomp[0];
-        const decNameIdx = decHdr.indexOf('player_name');
-        const decSgIdx = decHdr.indexOf('final_prediction');
-        const decSigIdx = decHdr.indexOf('std_dev');
-        const decFitIdx = decHdr.indexOf('course_fit_total_adj');
-
-        for(let i=1; i<RAW.decomp.length; i++){
-            const row = RAW.decomp[i];
-            if(!row[decNameIdx]) continue;
-            const revName = reverseName(row[decNameIdx]);
-            
-            let matchedId = null;
-            for(const [id, p] of playersMap.entries()){
-                if(p.name.toLowerCase() === revName.toLowerCase()) { matchedId = id; break; }
-            }
-            if(matchedId) {
-                playersMap.get(matchedId).sg = parseFloat(row[decSgIdx] || 0);
-                playersMap.get(matchedId).sigma = parseFloat(row[decSigIdx] || 0);
-                playersMap.get(matchedId).courseFit = parseFloat(row[decFitIdx] || 0);
-            }
-        }
-
-        // 4. Process Preds (Odds)
-        const predHdr = RAW.preds[0];
-        const p1Idx = predHdr.indexOf('p1_dg_id');
-        const p2Idx = predHdr.indexOf('p2_dg_id');
-        const winIdx = predHdr.indexOf('win');
-        const cutIdx = predHdr.indexOf('make_cut');
-        const t5Idx = predHdr.indexOf('top_5');
-        const t10Idx = predHdr.indexOf('top_10');
-        const t20Idx = predHdr.indexOf('top_20');
-
-        for(let i=1; i<RAW.preds.length; i++){
-            const row = RAW.preds[i];
-            if(!row[p1Idx]) continue;
-            
-            const winProb = oddsToProb(row[winIdx]);
-            const cutProb = oddsToProb(row[cutIdx]);
-            const t5Prob = oddsToProb(row[t5Idx]);
-            const t10Prob = oddsToProb(row[t10Idx]);
-            const t20Prob = oddsToProb(row[t20Idx]);
-
-            // Assign probabilities to both partners
-            [row[p1Idx], row[p2Idx]].forEach(id => {
-                if(playersMap.has(id)){
-                    const pl = playersMap.get(id);
-                    pl.winCh = winProb;
-                    pl.cutCh = cutProb;
-                    pl.t5Ch = t5Prob;
-                    pl.t10Ch = t10Prob;
-                    pl.t20Ch = t20Prob;
-                }
-            });
-        }
-
-        // 5. Build Final Array & Calculate Projections
-        P = [];
-        for(const [id, p] of playersMap.entries()) {
-            if(p.salary > 0) {
-                // V9/V10 Math Transformation
-                const exp_rounds = (4 * p.cutCh) + (2 * (1 - p.cutCh));
-                const scoring_EV = (9.0 + (3.0 * p.sg)) * exp_rounds;
-                const finish_EV = (30 * p.winCh) + (14 * p.t5Ch) + (7 * p.t10Ch) + (5 * p.t20Ch) + (2 * (p.t20Ch * 0.5)); // Approx T30
-                
-                p.proj = scoring_EV + finish_EV;
-                
-                // V11 Additions
-                p.zSigma = p.sigma * 0.85; // Foursomes variance compression
-                p.val = p.proj / (p.salary / 1000);
-                
-                // Ownership Mock based on Value
-                let rawOwn = (p.val * 5) - 15; 
-                if (rawOwn < 0.5) rawOwn = Math.random() * 2 + 0.5;
-                p.own = Math.min(35, Math.max(0.5, rawOwn + (p.winCh * 200)));
-                
-                // Leverage Score
-                p.leverage = (p.winCh * 100) - p.own;
-
-                P.push(p);
-            }
-        }
-
-        document.getElementById('loader-overlay').style.display = 'none';
-        document.getElementById('hdrMeta').innerHTML = `<span>${P.length}</span> players · <span>${new Set(P.map(x=>x.team)).size}</span> teams · ρ=<span>0.65</span>`;
-        
-        renderPool();
-        wire();
-        toast('Field ingestion complete. Engine Ready.', 'ok');
-
-    } catch(err) {
-        toast('Error parsing CSVs. Check file formats.', 'err');
-        console.error(err);
-    }
-}
 
 /* ══ POOL RENDERING ════════════════════════════════════ */
 function renderPool(){
@@ -524,6 +395,8 @@ function renderPool(){
     if(q && !p.name.toLowerCase().includes(q) && !p.team.toLowerCase().includes(q)) return false;
     if(PFILTER==='lev' && p.leverage <= -5) return false;
     if(PFILTER==='value' && p.val<=4.5) return false;
+    if(PFILTER==='am' && p.wave !== 'AM/PM') return false;
+    if(PFILTER==='pm' && p.wave !== 'PM/AM') return false;
     return true;
   });
   d.sort((a,b)=>{
@@ -543,7 +416,7 @@ function renderPool(){
     const sn = esc(p.name);
     const pC = p.proj>35?'v-grn':(p.proj<20?'v-red':'');
     const lC = p.leverage > 0 ? 'v-gld' : (p.leverage < -10 ? 'v-red' : 'v-tx2');
-    return `<tr class="${p.locked?'row-lk':''}">
+    return `<tr class="${p.locked?'row-lk':(p.excluded?'row-ex':'')}">
       <td><div class="pn">${sn}</div>
         <div class="acts">
           <button class="bi ${p.locked?'lk':''}" data-act="lock" data-name="${sn}">🔒</button>
@@ -551,14 +424,15 @@ function renderPool(){
         </div></td>
       <td>${dollar(p.salary)}</td>
       <td><span class="tm">${esc(p.team)}</span></td>
+      <td style="color:var(--cyan);font-weight:600">${p.wave}</td>
       <td class="${pC}" style="font-weight:800">${f1(p.proj)}</td>
-      <td>${sgn(p.sg, 3)}</td>
+      <td>${sgn(p.sg, 2)}</td>
       <td style="color:var(--pur)">${f1(p.zSigma)}</td>
       <td>${pct(p.winCh,2)}</td>
       <td style="color:var(--tx2)">${p.own.toFixed(1)}%</td>
       <td class="${lC}" style="font-weight:800">${sgn(p.leverage,1)}</td>
     </tr>`;
-  }).join('') || `<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--tx3)">No matches.</td></tr>`;
+  }).join('') || `<tr><td colspan="10" style="padding:24px;text-align:center;color:var(--tx3)">No matches.</td></tr>`;
 }
 
 /* ══ BUILDER ════════════════════════════════ */
@@ -590,7 +464,7 @@ function updateFloating(){
 }
 
 function runOptimizer(mode){
-  if(P.length === 0) { toast('Please upload CSVs first.', 'err'); return; }
+  if(P.length === 0) { toast('Data loading...', 'err'); return; }
   const CAP=50000, ROSTER=6, STEP=100;
   const pool = P.filter(p=>!p.excluded);
   const locked = pool.filter(p=>p.locked);
